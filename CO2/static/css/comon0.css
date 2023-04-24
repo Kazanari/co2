@@ -162,3 +162,78 @@ table th,table td{ border-bottom:1px solid rgba(255,255,255,.1); padding: .1rem 
   top: 10px;
   z-index: 2;
 }
+
+.modal-title {
+  margin: 0;
+  font-size: 24px;
+}
+
+.close-button {
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.modal-body {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.button {
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  margin-left: 10px;
+  text-transform: uppercase;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+.settings-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.settings-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.settings-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.settings-left {
+  margin-right: 10px;
+}
+
+.settings-right {
+  margin-left: 10px;
+}
+
+.settings-image {
+  height: 80%;
+}
+
+.settings-matome {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+#mainInput {
+  color: black;
+}
