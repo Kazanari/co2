@@ -6,9 +6,6 @@
     <script src="../static/js/echarts.js"></script>
     <script type="text/javascript" src="../static/js/jquery.js"></script>
     <link rel="stylesheet" href="../static/css/comon0.css">
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
 
 </head>
 <body>
@@ -61,7 +58,7 @@ var t = null;
     </li>
     <li>
         <div class="boxall" style="height: calc(20% - .15rem)">
-          <div class="alltitle">1日二酸化炭素排出量総量</div>
+          <div class="alltitle">本日二酸化炭素排出量総量</div>
           <div class="boxnav" id="echarts7"></div>
         </div>
           <div class="boxall" style="height: calc(38% - .15rem)">
@@ -137,36 +134,32 @@ var t = null;
 </div>
 
 <!-- 模态框结构 -->
-<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="settingsModalLabel">设置</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal" id="settingsModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">Option</h5>
+    </div>
+    <div class="modal-body">
+      <!-- 模态框内容 -->
+      <div class="settings-main">
+        <label>Main: <input type="text" id="mainInput" /></label>
       </div>
-      <div class="modal-body">
-        <div class="image-container" style="position: relative;">
-          <!-- 图片 -->
-          <img src="../static/images/emporiaVue.jpg" alt="示例图片" style="display: block; margin: 0 auto;" />
-      
-          <!-- Main 输入框 -->
-          <div class="main-input" style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);">
-            ...
-          </div>
-          <!-- 1-8 输入框 -->
-          <div class="left-inputs" style="position: absolute; top: 50%; left: 0;">
-            ...
-          </div>
-          <!-- 9-16 输入框 -->
-          <div class="right-inputs" style="position: absolute; top: 50%; right: 0;">
-            ...
-          </div>
+      <div class="settings-container">        
+        <div class="settings-side settings-left">
+          <!-- 左侧输入框 1-8 -->
+        </div>
+        <img src="../static/images/emporiaVue.jpg" alt="示例图片" class="settings-image" />
+        <div class="settings-side settings-right">
+          <!-- 右侧输入框 9-16 -->
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-        <button type="button" class="btn btn-primary" id="saveChanges">保存更改</button>
+      <div class="settings-matome">
+        <!-- まとめ输入框 -->
       </div>
+    </div>
+    <div class="modal-footer">
+      <!--<button class="button" id="cancelButton">close</button>-->
+      <button class="button" id="saveChanges">save</button>
     </div>
   </div>
 </div>
@@ -180,7 +173,7 @@ var t = null;
 </div>
 
 <!-- 设置按钮 -->
-<button id="settingsButton" class="settings-button">设置</button>
+<button id="settingsButton" class="settings-button">Option</button>
 
 <script>
   function echarts_1(data) {
@@ -567,10 +560,11 @@ var t = null;
             }
         },
         grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            containLabel: true
+          left: '0',
+          top: '20',
+          right: '10',
+          bottom: '-20',
+          containLabel: true,
         },
         xAxis: {
             type: 'value',
@@ -830,72 +824,148 @@ function getNewName(projectName) {
 }
 
 // 创建输入框
-function createInputs(idPrefix, start, end, container) {
-  for (let i = start; i <= end; i++) {
-    const inputGroup = $('<div>').addClass('input-group mb-3');
-    const inputLabel = $('<label>').addClass('input-group-text').attr('for', `${idPrefix}${i}`).text(`项目${i}`);
-    const inputField = $('<input>').addClass('form-control').attr({ type: 'text', id: `${idPrefix}${i}` });
-    inputGroup.append(inputLabel).append(inputField);
-    container.append(inputGroup);
+function createInput(id) {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.id = id;
+  return input;
+}
+
+// 创建左侧输入框
+const leftInputs = document.querySelector(".settings-left");
+for (let i = 1; i <= 8; i++) {
+  const label = document.createElement("label");
+  label.textContent = `${i}: `;
+  label.style.color = "black"; // 添加这行
+  const input = createInput(`input${i}`);
+  label.appendChild(input);
+  leftInputs.appendChild(label);
+}
+
+// 创建右侧输入框
+const rightInputs = document.querySelector(".settings-right");
+for (let i = 9; i <= 16; i++) {
+  const label = document.createElement("label");
+  label.textContent = `${i}: `;
+  label.style.color = "black"; // 添加这行
+  const input = createInput(`input${i}`);
+  label.appendChild(input);
+  rightInputs.appendChild(label);
+}
+
+// 创建まとめ输入框
+const matomeContainer = document.querySelector(".settings-matome");
+for (let i = 1; i <= 5; i++) {
+  const label = document.createElement("label");
+  label.textContent = `まとめ${i}: `;
+  label.style.color = "black"; // 添加这行
+  const input = createInput(`matomeInput${i}`);
+  label.appendChild(input);
+  matomeContainer.appendChild(label);
+}
+
+// 读取和保存 newname.json 和 matome.json 的函数
+async function fetchJson(url) {
+  const response = await fetch(url);
+  const data = await response.json();
+  return data;
+}
+
+async function saveJson(url, data) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  return await response.json();
+}
+
+// 初始化输入框内容
+async function initializeInputs() {
+  const newnameData = await fetchJson("../static/datas/newname.json");
+  const matomeData = await fetchJson("../static/datas/matome.json");
+
+  // 将名字与新名字匹配
+  function getNewName(name) {
+    const matchedItem = newnameData.find(item => item.name === name);
+    return matchedItem ? matchedItem.newname : "";
+  }
+
+  // 将名字与matome名字匹配
+  function getMatomeName(name) {
+    const matchedItem = matomeData.find(item => item.name === name);
+    return matchedItem ? matchedItem.newname : "";
+  }
+
+  document.getElementById("mainInput").value = getNewName("Main");
+
+  for (let i = 1; i <= 16; i++) {
+    document.getElementById(`input${i}`).value = getNewName(i.toString());
+  }
+
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById(`matomeInput${i}`).value = getMatomeName(`まとめ${i}`);
   }
 }
 
-$(document).ready(function () {
-  // 创建 1-8 和 9-16 的输入框
-  createInputs('leftInput', 1, 8, $('#leftInputs'));
-  createInputs('rightInput', 9, 16, $('#rightInputs'));
+initializeInputs();
 
-  // 设置按钮点击事件
-  $('#settingsButton').on('click', function () {
-    // 在这里填充输入框的值（从您的 JSON 数据获取 newname），然后打开模态框。
-    // 假设您的 JSON 数据存储在名为 `jsonData` 的变量中
-    const jsonData = [
-      { "name": "Main", "newname": "Main" },
-      // ... 其他数据
-    ];
+// 保存按钮点击事件
+document.getElementById("saveChanges").addEventListener("click", async function () {
+  const newnameData = [];
+  const matomeData = [];
 
-    // 填充输入框的值
-    for (const item of jsonData) {
-      const inputId = item.name === 'Main' ? 'main' : (parseInt(item.name) <= 8 ? 'leftInput' : 'rightInput') + item.name;
-      $('#' + inputId).val(item.newname);
+  newnameData.push({ name: 'Main', newname: document.getElementById("mainInput").value });
+
+  for (let i = 1; i <= 16; i++) {
+    newnameData.push({ name: i.toString(), newname: document.getElementById(`input${i}`).value });
+  }
+
+  for (let i = 1; i <= 5; i++) {
+    const matomeItem = {
+      name: `matome${i}`,
+      newname: document.getElementById(`matomeInput${i}`).value,
+      Main: "0",
+    };
+
+    for (let j = 1; j <= 16; j++) {
+      matomeItem[j.toString()] = "1";
     }
 
-    // 显示模态框
-    const settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
-    settingsModal.show();
-  });
+    matomeData.push(matomeItem);
+  }
 
-  // 保存更改按钮点击事件
-  $('#saveChanges').on('click', function () {
-    // 从输入框获取值，并将它们保存到 JSON 数据中
-    for (const item of jsonData) {
-      const inputId = item.name === 'Main' ? 'main' : (parseInt(item.name) <= 8 ? 'leftInput' : 'rightInput') + item.name;
-      item.newname = $('#' + inputId).val();
-    }
+  await saveJson("/update_newname", newnameData);
+  await saveJson("/update_matome", matomeData);
 
-    // 发送数据到服务器
-    $.ajax({
-      url: '/update_newnames',
-      method: 'POST',
-      contentType: 'application/json',
-      data: JSON.stringify(jsonData),
-      success: function (response) {
-        if (response.success) {
-          console.log('数据已更新');
-        } else {
-          console.error('更新失败');
-        }
-      }
-    });
+  // 调用函数加载新名称数据
+  loadNewNameData();
 
-    // 隐藏模态框
-    const settingsModalInstance = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
-    settingsModalInstance.hide();
-
-    // 在这里调用更新图表的函数，例如：
-    // updateChartData(jsonData);
-  });
+  settingsModal.style.display = "none";
 });
+
+document.getElementById("settingsButton").addEventListener("click", function () {
+  const settingsModal = document.getElementById("settingsModal");
+  settingsModal.style.display = "block";
+});
+
+// 点击关闭按钮时关闭模态框
+document.getElementsByClassName("close")[0].addEventListener("click", function () {
+  const settingsModal = document.getElementById("settingsModal");
+  settingsModal.style.display = "none";
+});
+
+// 点击模态框外部时关闭模态框
+window.addEventListener("click", function (event) {
+  const settingsModal = document.getElementById("settingsModal");
+  if (event.target === settingsModal) {
+    settingsModal.style.display = "none";
+  }
+});
+
 // 初始化图表并第一次更新数据
 updateChartData();
 
