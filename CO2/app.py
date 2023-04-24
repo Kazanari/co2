@@ -159,12 +159,19 @@ def get_saved_data():
 
     return jsonify({'data': data, 'current_time': datetime.now().isoformat()})
 
-@app.route('/update_newnames', methods=['POST'])
-def update_newnames():
-    new_data = request.json
+@app.route('/update_newname', methods=['POST'])
+def update_newname():
+    data = request.get_json()
     with open('static/datas/newname.json', 'w') as f:
-        json.dump(new_data, f)
-    return jsonify(success=True)
+        json.dump(data, f)
+    return jsonify({"result": "success"})
+
+@app.route('/update_matome', methods=['POST'])
+def update_matome():
+    data = request.get_json()
+    with open('static/datas/matome.json', 'w') as f:
+        json.dump(data, f)
+    return jsonify({"result": "success"})
 
 def save_data_to_local(data_list: List[Dict], data_type: str):
     # 创建文件路径字典
