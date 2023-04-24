@@ -621,113 +621,99 @@ var t = null;
       focus: "series",
     };
 
-    myChart.on("click", function (params) {
-       // 创建弹出窗口
-      var popup = document.createElement("div");
-      popup.style.width = "80%";
-      popup.style.height = "80%";
-      popup.style.maxWidth = "1200px"; // 设置最大宽度
-      popup.style.maxHeight = "800px"; // 设置最大高度
-      popup.style.backgroundColor = "white";
-      popup.style.position = "fixed";
-      popup.style.top = "10%";
-      popup.style.left = "10%";
-      popup.style.zIndex = 1000;
-      popup.style.overflow = "auto";
+    myChart.on('click', function (params) {
+      // 获取选中项目的名字
+      var selectedItemName = params.name;
 
-      // 创建关闭按钮
-      var closeButton = document.createElement('button');
-      closeButton.textContent = '关闭';
-      closeButton.style.position = 'absolute';
-      closeButton.style.right = '10px';
-      closeButton.style.top = '10px';
-      closeButton.style.padding = '5px'; // 增加内边距
-      closeButton.style.zIndex = 1001;
-      closeButton.addEventListener("click", function (event) {
-        event.stopPropagation(); // 阻止事件冒泡
-        document.body.removeChild(popup);
-      });
-      popup.appendChild(closeButton);
-      
-      // 在弹出窗口中添加图表
-      var chartContainer = document.createElement("div");
-      chartContainer.style.width = "100%";
-      chartContainer.style.height = "100%";
-      popup.appendChild(chartContainer);
-
-      // 检查当前 DOM 元素上是否存在 ECharts 实例，如果存在则释放该实例
-      var oldChart = echarts.getInstanceByDom(chartContainer);
-      if (oldChart) {
-        oldChart.dispose();
-      }
-
-      // 使用新的 DOM 元素初始化 ECharts 实例
-      var newChart = echarts.init(chartContainer);
-
-      // 监听窗口大小调整事件
-      window.addEventListener("resize", function () {
-        popup.style.width = "80%";
-        popup.style.height = "80%";
-        popup.style.maxWidth = "1200px";
-        popup.style.maxHeight = "800px";
+      // 筛选与选中项目相关的数据
+      var selectedItemData = data.second.filter(function (item) {
+        return getNewName(item.name) === selectedItemName;
       });
 
-      // 获取点击的项目名称
-      var clickedName = params.name;
-
-      // 获取1分钟内的秒数据
-      var secondData = data.second.filter(function (item) {
-        return getNewName(item.name) === clickedName;
+      // 准备数据
+      var xAxisData = selectedItemData.map(function (item) {
+        return new Date(item.time).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
       });
 
-      // 在此处添加弹窗中显示的 ECharts 图表配置和数据
+      var yAxisData = selectedItemData.map(function (item) {
+        return item.number;
+      });
+
+      // 定义 modalOption
       var modalOption = {
         tooltip: {
-          trigger: "axis",
-          axisPointer: {
-            type: "cross",
-            label: {
-              backgroundColor: "#6a7985",
-            },
-          },
-        },
-        grid: {
-          left: "3%",
-          right: "4%",
-          bottom: "3%",
-          containLabel: true,
+          trigger: 'axis'
         },
         xAxis: {
-          type: "category",
-          boundaryGap: false,
-          data: secondData.map(function (item) {
-            return item.time;
-          }),
+          type: 'category',
+          data: xAxisData
         },
         yAxis: {
-          type: "value",
+          type: 'value'
         },
         series: [
           {
-            name: "二酸化炭素排出量(g)",
-            type: "line",
+            data: yAxisData,
+            type: 'line',
             smooth: true,
             areaStyle: {},
-            itemStyle: {
-              normal: {
-                color: colors[params.dataIndex],
-              },
+            lineStyle: {
+              width: 2
             },
-            data: secondData.map(function (item) {
-              return item.number;
-            }),
-          },
-        ],
+            itemStyle: {
+              color: '#FF7F50'
+            },
+            emphasis: {
+              focus: 'series',
+              scale: true
+            }
+          }
+        ]
       };
 
-      newChart.setOption(modalOption);
-      newChart.resize(); // 在弹窗打开后调整图表尺寸
-      document.body.appendChild(popup);
+
+      // 创建弹出窗口
+      var modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.id = "popup";
+      if (document.getElementById("popup")) {
+        document.getElementById("popup").remove();
+      }
+      document.body.appendChild(modal);
+
+      var modalContent = document.createElement('div');
+      modalContent.className = 'modal-content';
+      modal.appendChild(modalContent);
+
+      var closeButton = document.createElement('span');
+      closeButton.className = 'close';
+      closeButton.innerHTML = '&times;';
+      modalContent.appendChild(closeButton);
+
+      closeButton.addEventListener('click', function () {
+        modal.style.display = 'none';
+      });
+
+      // 在弹出窗口中添加图表
+      var chartContainer = document.createElement('div');
+      chartContainer.style.width = '100%';
+      chartContainer.style.height = 'calc(100% - 40px)';
+      modalContent.appendChild(chartContainer);
+
+      // 将弹出窗口添加到页面中
+      document.body.appendChild(modal);
+
+      // 初始化图表并设置数据
+      var newChart = echarts.init(chartContainer);
+      setTimeout(function () {
+        newChart.setOption(modalOption);
+        window.addEventListener("resize", function () {
+          newChart.resize();
+        });
+      }, 0);
+
+      // 显示模态窗口
+      modal.style.display = 'block';
     });
   }
 
@@ -765,8 +751,7 @@ var t = null;
     });
   }
 
-  // 初始化图表并第一次更新数据
-  updateChartData();
+
 
   // 页面加载完成时，隐藏 loading 动画
   $(window).load(function() {
@@ -874,7 +859,8 @@ $(document).ready(function () {
     // updateChartData(jsonData);
   });
 });
-
+// 初始化图表并第一次更新数据
+updateChartData();
 
 </script>
 
