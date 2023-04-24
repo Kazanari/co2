@@ -625,9 +625,29 @@ var t = null;
       // 获取选中项目的名字
       var selectedItemName = params.name;
 
+      var tenMinutesAgo = new Date().getTime() - 5 * 60 * 1000;
+
       // 筛选与选中项目相关的数据
       var selectedItemData = data.second.filter(function (item) {
-        return getNewName(item.name) === selectedItemName;
+        return getNewName(item.name) === selectedItemName && new Date(item.time).getTime() >= tenMinutesAgo;
+      });
+
+      var startTime = new Date() - 5 * 60 * 1000; // 10分钟之前的时间戳
+      var timeRange = [];
+      for (var i = 0; i < 5 * 60; i++) { // 10分钟的秒数
+        timeRange.push(new Date(startTime + i * 1000)); // 将每一秒的时间戳添加到timeRange数组中
+      }
+
+      selectedItemData = timeRange.map(function (time) {
+        var existingData = selectedItemData.find(function (item) {
+          return getNewName(item.name) === selectedItemName && Math.floor(item.time / 1000) === Math.floor(time / 1000);
+        });
+
+        if (existingData) {
+          return existingData;
+        } else {
+          return { name: selectedItemName, time: time, number: 0 };
+        }
       });
 
       // 准备数据
@@ -636,17 +656,26 @@ var t = null;
       });
 
       var yAxisData = selectedItemData.map(function (item) {
-        return item.number;
+        return (item.number / 3600) * 0.433;
       });
 
       // 定义 modalOption
       var modalOption = {
+        title: {
+          text: '5分間の秒ごと変化図',
+          left: 'center'
+        },
         tooltip: {
           trigger: 'axis'
         },
         xAxis: {
           type: 'category',
-          data: xAxisData
+          data: xAxisData,
+          axisLabel: {
+            interval: function (index, value) {
+              return index % 30 === 0;
+            }
+          }
         },
         yAxis: {
           type: 'value'
@@ -656,21 +685,10 @@ var t = null;
             data: yAxisData,
             type: 'line',
             smooth: true,
-            areaStyle: {},
-            lineStyle: {
-              width: 2
-            },
-            itemStyle: {
-              color: '#FF7F50'
-            },
-            emphasis: {
-              focus: 'series',
-              scale: true
-            }
+            areaStyle: {}
           }
         ]
       };
-
 
       // 创建弹出窗口
       var modal = document.createElement('div');
@@ -696,8 +714,8 @@ var t = null;
 
       // 在弹出窗口中添加图表
       var chartContainer = document.createElement('div');
-      chartContainer.style.width = '100%';
-      chartContainer.style.height = 'calc(100% - 40px)';
+      chartContainer.style.width = '800px';
+      chartContainer.style.height = '600px';
       modalContent.appendChild(chartContainer);
 
       // 将弹出窗口添加到页面中
