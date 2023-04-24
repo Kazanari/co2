@@ -726,8 +726,7 @@ var t = null;
 
       // 在弹出窗口中添加图表
       var chartContainer = document.createElement('div');
-      chartContainer.id = 'chart-container';
-      chartContainer.style.width = '100%';
+      chartContainer.style.width = 'calc(100% - 20px)';
       chartContainer.style.height = 'calc(100% - 40px)';
       modalContent.appendChild(chartContainer);
 
@@ -736,16 +735,19 @@ var t = null;
 
       // 初始化图表并设置数据
       var newChart = echarts.init(chartContainer);
-      newChart.setOption(modalOption);
-
-      // 当窗口大小改变时，调整图表大小
-      window.addEventListener("resize", function () {
+      setTimeout(function () {
+        newChart.setOption(modalOption);
         var modalContent = document.getElementById('modal-content');
-        var chartContainer = document.getElementById('chart-container');
-        chartContainer.style.width = window.getComputedStyle(modalContent).width;
+        chartContainer.style.width = window.getComputedStyle(modalContent).width + ' - 20px)';
         chartContainer.style.height = 'calc(' + window.getComputedStyle(modalContent).height + ' - 40px)';
         newChart.resize();
-      });
+
+        window.addEventListener("resize", function () {
+          chartContainer.style.width = window.getComputedStyle(modalContent).width + ' - 20px)';
+          chartContainer.style.height = 'calc(' + window.getComputedStyle(modalContent).height + ' - 40px)';
+          newChart.resize();
+        });
+      }, 0);
 
       // 显示模态窗口
       modal.style.display = 'block';
