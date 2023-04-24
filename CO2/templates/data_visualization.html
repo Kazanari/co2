@@ -626,6 +626,8 @@ var t = null;
       var popup = document.createElement("div");
       popup.style.width = "80%";
       popup.style.height = "80%";
+      popup.style.maxWidth = "1200px"; // 设置最大宽度
+      popup.style.maxHeight = "800px"; // 设置最大高度
       popup.style.backgroundColor = "white";
       popup.style.position = "fixed";
       popup.style.top = "10%";
@@ -641,16 +643,16 @@ var t = null;
       closeButton.style.top = '10px';
       closeButton.style.padding = '5px'; // 增加内边距
       closeButton.style.zIndex = 1001;
-      closeButton.addEventListener('click', function () {
+      closeButton.addEventListener("click", function (event) {
+        event.stopPropagation(); // 阻止事件冒泡
         document.body.removeChild(popup);
       });
       popup.appendChild(closeButton);
       
       // 在弹出窗口中添加图表
       var chartContainer = document.createElement("div");
-      chartContainer.style.width = 'calc(100% - 40px)'; // 减去一定的宽度以考虑边距
-      chartContainer.style.height = 'calc(90% - 40px)'; // 减去一定的高度以考虑边距
-      chartContainer.style.margin = '20px'; // 添加外边距
+      chartContainer.style.width = "100%";
+      chartContainer.style.height = "100%";
       popup.appendChild(chartContainer);
 
       // 检查当前 DOM 元素上是否存在 ECharts 实例，如果存在则释放该实例
@@ -664,10 +666,10 @@ var t = null;
 
       // 监听窗口大小调整事件
       window.addEventListener("resize", function () {
-        // 更新图表容器尺寸
-        chartContainer.style.width = 'calc(100% - 40px)';
-        chartContainer.style.height = 'calc(90% - 40px)';
-        newChart.resize();
+        popup.style.width = "80%";
+        popup.style.height = "80%";
+        popup.style.maxWidth = "1200px";
+        popup.style.maxHeight = "800px";
       });
 
       // 获取点击的项目名称
