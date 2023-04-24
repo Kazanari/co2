@@ -287,6 +287,9 @@ var t = null;
           color: 'rgba(255,255,255,.6)',
           fontSize: 14,
         },
+        formatter: function (value) {
+          return value + 'g';
+        }
       },
       splitLine: {
         lineStyle: {
@@ -445,6 +448,9 @@ var t = null;
           color: 'rgba(255,255,255,.6)',
           fontSize: 14,
         },
+        formatter: function (value) {
+          return value + 'w';
+        }
       },
       splitLine: {
         lineStyle: {
@@ -568,7 +574,12 @@ var t = null;
         },
         xAxis: {
             type: 'value',
-            boundaryGap: [0, 0.01]
+            boundaryGap: [0, 0.01],
+            axisLabel: {
+              formatter: function (value) {
+                return value + 'g';
+              }
+            }
         },
         yAxis: {
             type: 'category',
@@ -625,23 +636,19 @@ var t = null;
       // 获取选中项目的名字
       var selectedItemName = params.name;
 
-      var tenMinutesAgo = new Date().getTime() - 5 * 60 * 1000;
-
       // 筛选与选中项目相关的数据
-      var selectedItemData = data.second.filter(function (item) {
-        return getNewName(item.name) === selectedItemName && new Date(item.time).getTime() >= tenMinutesAgo;
-      });
-
       var startTime = new Date() - 5 * 60 * 1000; // 10分钟之前的时间戳
       var timeRange = [];
+
       for (var i = 0; i < 5 * 60; i++) { // 10分钟的秒数
         timeRange.push(new Date(startTime + i * 1000)); // 将每一秒的时间戳添加到timeRange数组中
       }
-
       selectedItemData = timeRange.map(function (time) {
-        var existingData = selectedItemData.find(function (item) {
-          return getNewName(item.name) === selectedItemName && Math.floor(item.time / 1000) === Math.floor(time / 1000);
-        });
+        var existingData = data.second.find(function (item) {
+            var rangeTime = time.getTime();
+            var itemTime = new Date(item.time).getTime();
+            return getNewName(item.name) === selectedItemName && Math.abs(itemTime  - rangeTime) < 1000;
+          });
 
         if (existingData) {
           return existingData;
@@ -678,7 +685,12 @@ var t = null;
           }
         },
         yAxis: {
-          type: 'value'
+          type: 'value',
+          axisLabel: {
+            formatter: function (value) {
+              return value + 'g';
+            }
+          }
         },
         series: [
           {
@@ -689,7 +701,6 @@ var t = null;
           }
         ]
       };
-
       // 创建弹出窗口
       var modal = document.createElement('div');
       modal.className = 'modal';
@@ -701,6 +712,7 @@ var t = null;
 
       var modalContent = document.createElement('div');
       modalContent.className = 'modal-content';
+      modalContent.id = 'modal-content';
       modal.appendChild(modalContent);
 
       var closeButton = document.createElement('span');
@@ -714,8 +726,9 @@ var t = null;
 
       // 在弹出窗口中添加图表
       var chartContainer = document.createElement('div');
-      chartContainer.style.width = '800px';
-      chartContainer.style.height = '600px';
+      chartContainer.id = 'chart-container';
+      chartContainer.style.width = '100%';
+      chartContainer.style.height = 'calc(100% - 40px)';
       modalContent.appendChild(chartContainer);
 
       // 将弹出窗口添加到页面中
@@ -723,12 +736,16 @@ var t = null;
 
       // 初始化图表并设置数据
       var newChart = echarts.init(chartContainer);
-      setTimeout(function () {
-        newChart.setOption(modalOption);
-        window.addEventListener("resize", function () {
-          newChart.resize();
-        });
-      }, 0);
+      newChart.setOption(modalOption);
+
+      // 当窗口大小改变时，调整图表大小
+      window.addEventListener("resize", function () {
+        var modalContent = document.getElementById('modal-content');
+        var chartContainer = document.getElementById('chart-container');
+        chartContainer.style.width = window.getComputedStyle(modalContent).width;
+        chartContainer.style.height = 'calc(' + window.getComputedStyle(modalContent).height + ' - 40px)';
+        newChart.resize();
+      });
 
       // 显示模态窗口
       modal.style.display = 'block';
