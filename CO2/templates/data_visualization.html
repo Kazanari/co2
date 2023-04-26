@@ -75,7 +75,7 @@ var t = null;
 
 		<div class="boxall" style="height: calc(58% - .15rem)">
 
-			<div class="alltitle">現在1時間二酸化炭素排出量ランキング</div>
+			<div class="alltitle">`現在1時間二酸化炭素排出量ランキング</div>
 			<div class="boxnav" id="echarts6"></div>
 
       </div>
@@ -124,6 +124,14 @@ var t = null;
   <div class="modal-content">
     <span class="close">&times;</span>
     <div id="modalChart" style="width: 600px; height: 400px;"></div>
+  </div>
+</div>
+
+<!-- 弹窗部分 -->
+<div id="myModal6" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <div id="modalChart6" style="width: 600px; height: 400px;"></div>
   </div>
 </div>
 
@@ -810,7 +818,7 @@ var t = null;
             type: 'value',
             axisLabel: {
               formatter: function (value) {
-                return value.toFixed(2) + 'g';
+                return value + 'g';
               }
             }
           },
@@ -903,7 +911,7 @@ var t = null;
   }
   
   function echarts_6(data) {
-    // 定义 colors 变量
+         // 定义 colors 变量
     var colors = [
       "#c23531",
       "#2f4554",
@@ -1005,7 +1013,7 @@ var t = null;
     });
 
     // 弹窗关闭相关代码
-    var modal = document.getElementById("myModal");
+    var modal = document.getElementById("myModal6");
     var closeButton = document.getElementsByClassName("close")[0];
 
     closeButton.onclick = function () {
@@ -1019,9 +1027,9 @@ var t = null;
     };
 
     // ECharts 相关代码
-    var modalChart = echarts.init(document.getElementById("modalChart"));
+    var modalChart = echarts.init(document.getElementById("modalChart6"));
 
-    // 在 echarts_4 函数中添加点击事件处理
+    // 在 echarts_6 函数中添加点击事件处理
     option.series[0].emphasis = {
       focus: "series",
     };
@@ -1035,7 +1043,7 @@ var t = null;
       var timeRange = [];
 
       for (var i = 0; i < 5 * 60; i++) { // 5小时的分数
-        timeRange.push(new Date(startTime + i * 60000)); // 将每一分的时间戳添加到timeRange数组中
+        timeRange.push(new Date(startTime + i * 60000)); // 将每一秒的时间戳添加到timeRange数组中
       }
       selectedItemData = timeRange.map(function (time) {
         var existingData = data.minute.find(function (item) {
@@ -1083,7 +1091,7 @@ var t = null;
             type: 'value',
             axisLabel: {
               formatter: function (value) {
-                return value.toFixed(2) + 'g';
+                return value + 'g';
               }
             }
           },
@@ -1119,57 +1127,56 @@ var t = null;
       };
 
       // 创建弹出窗口
-      var modal = document.createElement('div');
-      modal.className = 'modal';
-      modal.id = "popup";
-      if (document.getElementById("popup")) {
-        document.getElementById("popup").remove();
+      var modal6 = document.createElement('div');
+      modal6.className = 'modal';
+      modal6.id = "popup6";
+      if (document.getElementById("popup6")) {
+        document.getElementById("popup6").remove();
       }
-      document.body.appendChild(modal);
+      document.body.appendChild(modal6);
 
-      var modalContent = document.createElement('div');
-      modalContent.className = 'modal-content';
-      modalContent.id = 'modal-content';
-      modal.appendChild(modalContent);
+      var modalContent6 = document.createElement('div');
+      modalContent6.className = 'modal-content';
+      modalContent6.id = 'modal-content6';
+      modal6.appendChild(modalContent6);
 
-      var closeButton = document.createElement('span');
-      closeButton.className = 'close';
-      closeButton.innerHTML = '&times;';
-      modalContent.appendChild(closeButton);
+      var closeButton6 = document.createElement('span');
+      closeButton6.className = 'close';
+      closeButton6.innerHTML = '&times;';
+      modalContent6.appendChild(closeButton6);
 
-      closeButton.addEventListener('click', function () {
-        modal.style.display = 'none';
+      closeButton6.addEventListener('click', function () {
+        modal6.style.display = 'none';
       });
 
       // 在弹出窗口中添加图表
-      var chartContainer = document.createElement('div');
-      chartContainer.style.width = 'calc(100% - 20px)';
-      chartContainer.style.height = 'calc(100% - 40px)';
-      modalContent.appendChild(chartContainer);
+      var chartContainer6 = document.createElement('div');
+      chartContainer6.style.width = 'calc(100% - 20px)';
+      chartContainer6.style.height = 'calc(100% - 40px)';
+      modalContent6.appendChild(chartContainer6);
 
       // 将弹出窗口添加到页面中
-      document.body.appendChild(modal);
+      document.body.appendChild(modal6);
 
       // 初始化图表并设置数据
-      var newChart = echarts.init(chartContainer);
+      var newChart6 = echarts.init(chartContainer6);
       setTimeout(function () {
-        newChart.setOption(modalOption);
-        var modalContent = document.getElementById('modal-content');
-        chartContainer.style.width = window.getComputedStyle(modalContent).width + ' - 20px)';
-        chartContainer.style.height = 'calc(' + window.getComputedStyle(modalContent).height + ' - 40px)';
-        newChart.resize();
+        newChart6.setOption(modalOption);
+        var modalContent6 = document.getElementById('modal-content6');
+        chartContainer6.style.width = window.getComputedStyle(modalContent6).width + ' - 20px)';
+        chartContainer6.style.height = 'calc(' + window.getComputedStyle(modalContent6).height + ' - 40px)';
+        newChart6.resize();
 
         window.addEventListener("resize", function () {
-          chartContainer.style.width = window.getComputedStyle(modalContent).width + ' - 20px)';
-          chartContainer.style.height = 'calc(' + window.getComputedStyle(modalContent).height + ' - 40px)';
-          newChart.resize();
+          chartContainer6.style.width = window.getComputedStyle(modalContent6).width + ' - 20px)';
+          chartContainer6.style.height = 'calc(' + window.getComputedStyle(modalContent6).height + ' - 40px)';
+          newChart6.resize();
         });
       }, 0);
 
       // 显示模态窗口
-      modal.style.display = 'block';
+      modal6.style.display = 'block';
     });
-
   }
 
   function echarts_7(data) {
@@ -1177,10 +1184,9 @@ var t = null;
   var currentTime = new Date();
 
   var hourStart = new Date(currentTime);
-  hourStart.setHours(currentTime.getHours() - 1, 0, 0, 0);
+  hourStart.setHours(currentTime.getHours() - 1);
 
   var hourEnd = new Date(currentTime);
-  hourEnd.setMilliseconds(999);
 
   // 过滤一小时以内的数据
   var filteredMinuteData = data.minute.filter(function (item) {
