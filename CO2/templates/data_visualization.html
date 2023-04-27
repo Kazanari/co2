@@ -97,7 +97,7 @@ var t = null;
     <div class="modal-body">
       <!-- 模态框内容 -->
       <div class="settings-main">
-        <label>Main: <input type="text" id="mainInput" /></label>
+        <label> <button class="toggle-btn"></button> Main: <input type="text" id="mainInput" /></label>
       </div>
       <div class="settings-container">        
         <div class="settings-side settings-left">
@@ -120,7 +120,7 @@ var t = null;
 </div>
 
 <!-- 弹窗部分 -->
-<div id="myModal" class="modal">
+<div id="myModal" class="modal" style="display: none;">
   <div class="modal-content">
     <span class="close">&times;</span>
     <div id="modalChart" style="width: 600px; height: 400px;"></div>
@@ -128,7 +128,7 @@ var t = null;
 </div>
 
 <!-- 弹窗部分 -->
-<div id="myModal6" class="modal">
+<div id="myModal6" class="modal" style="display: none;">
   <div class="modal-content">
     <span class="close">&times;</span>
     <div id="modalChart6" style="width: 600px; height: 400px;"></div>
@@ -640,17 +640,15 @@ var t = null;
   function echarts_4(data) {
     // 定义 colors 变量
     var colors = [
-      "#c23531",
-      "#2f4554",
-      "#61a0a8",
-      "#d48265",
-      "#91c7ae",
-      "#749f83",
-      "#ca8622",
-      "#bda29a",
-      "#6e7074",
-      "#546570",
-      "#c4ccd3",
+        '#3B7DF8', // 蓝色
+        '#F44336', // 红色
+        '#4CAF50', // 绿色
+        '#FF9800', // 橙色
+        '#9C27B0', // 紫色
+        '#00BCD4', // 青色
+        '#FFEB3B', // 黄色
+        '#795548', // 棕色
+        '#607D8B'  // 蓝灰色
     ];
 
     // 对数据按时间排序（降序）
@@ -712,7 +710,15 @@ var t = null;
         },
         yAxis: {
             type: 'category',
-            data: names.reverse()
+            data: names.reverse(),
+            axisPointer: {
+            type: 'none', // 设置为 'none' 避免在 Y 轴上显示阴影
+            label: {
+                show: true,
+                backgroundColor: '#6a7985', // 设置高亮背景颜色
+                color: '#ffffff' // 设置高亮文字颜色
+            }
+        }
         },
         series: [
             {
@@ -844,7 +850,9 @@ var t = null;
           },
           {
             name: '单位: w',
-            data: yAxisData,
+            data: yAxisData.map(function (value) {
+              return value ? value / 1 : null;
+            }),
             type: 'line',
             smooth: true,
             areaStyle: {},
@@ -911,19 +919,17 @@ var t = null;
   }
   
   function echarts_6(data) {
-         // 定义 colors 变量
+    // 定义 colors 变量
     var colors = [
-      "#c23531",
-      "#2f4554",
-      "#61a0a8",
-      "#d48265",
-      "#91c7ae",
-      "#749f83",
-      "#ca8622",
-      "#bda29a",
-      "#6e7074",
-      "#546570",
-      "#c4ccd3",
+      '#3B7DF8', // 蓝色
+      '#F44336', // 红色
+      '#4CAF50', // 绿色
+      '#FF9800', // 橙色
+      '#9C27B0', // 紫色
+      '#00BCD4', // 青色
+      '#FFEB3B', // 黄色
+      '#795548', // 棕色
+      '#607D8B'  // 蓝灰色
     ];
 
     // 对数据按时间排序（降序）
@@ -935,8 +941,8 @@ var t = null;
     var latestTime = data.hour[0].time;
 
     // 选择与最新时间相同的数据
-    var latestData = data.hour.filter(function (item) {
-      return item.time === latestTime;
+    var latestData = data.hour.filter(function (item6) {
+      return item6.time === latestTime;
     });
 
     // 按照 number 降序排列数据
@@ -948,12 +954,12 @@ var t = null;
     var topData = latestData.slice(0, 9);
 
     // 获取项目名称和 number 数组
-    var names = topData.map(function(item) {
-        return getNewName(item.name);
+    var names = topData.map(function(item6) {
+        return getNewName(item6.name);
     });
 
-    var numbers = topData.map(function(item) {
-        return item.number;
+    var numbers = topData.map(function(item6) {
+        return item6.number;
     });
 
     // 初始化 ECharts 实例
@@ -985,13 +991,21 @@ var t = null;
         },
         yAxis: {
             type: 'category',
-            data: names.reverse()
+            data: names.reverse(),
+            axisPointer: {
+            type: 'none', // 设置为 'none' 避免在 Y 轴上显示阴影
+            label: {
+                show: true,
+                backgroundColor: '#6a7985', // 设置高亮背景颜色
+                color: '#ffffff' // 设置高亮文字颜色
+            }
+        }
         },
         series: [
             {
                 name: '二酸化炭素排出量(g)',
                 type: 'bar',
-                data: numbers.map(function(item) { return item * 433; }).reverse(),
+                data: numbers.map(function(item6) { return item6 * 433; }).reverse(),
                 itemStyle: {
                   emphasis: {
                     color: function (params) {
@@ -1013,21 +1027,21 @@ var t = null;
     });
 
     // 弹窗关闭相关代码
-    var modal = document.getElementById("myModal6");
-    var closeButton = document.getElementsByClassName("close")[0];
+    var modal6 = document.getElementById("myModal6");
+    var closeButton6 = document.getElementsByClassName("close")[1];
 
-    closeButton.onclick = function () {
-      modal.style.display = "none";
+    closeButton6.onclick = function () {
+      modal6.style.display = "none";
     };
 
     window.onclick = function (event) {
-      if (event.target == modal) {
-        modal.style.display = "none";
+      if (event.target == modal6) {
+        modal6.style.display = "none";
       }
     };
 
     // ECharts 相关代码
-    var modalChart = echarts.init(document.getElementById("modalChart6"));
+    var modalChart6 = echarts.init(document.getElementById("modalChart6"));
 
     // 在 echarts_6 函数中添加点击事件处理
     option.series[0].emphasis = {
@@ -1036,7 +1050,7 @@ var t = null;
 
     myChart.on('click', function (params) {
       // 获取选中项目的名字
-      var selectedItemName = params.name;
+      var selectedItemName6 = params.name;
 
       // 筛选与选中项目相关的数据
       var startTime = new Date() - 5 * 60 * 60000; // 5小时之前的时间戳
@@ -1045,31 +1059,31 @@ var t = null;
       for (var i = 0; i < 5 * 60; i++) { // 5小时的分数
         timeRange.push(new Date(startTime + i * 60000)); // 将每一秒的时间戳添加到timeRange数组中
       }
-      selectedItemData = timeRange.map(function (time) {
-        var existingData = data.minute.find(function (item) {
+      selectedItemData6 = timeRange.map(function (time) {
+        var existingData6 = data.minute.find(function (item6) {
             var rangeTime = time.getTime();
-            var itemTime = new Date(item.time).getTime();
-            return getNewName(item.name) === selectedItemName && Math.abs(itemTime  - rangeTime) < 60000;
+            var itemTime = new Date(item6.time).getTime();
+            return getNewName(item6.name) === selectedItemName6 && Math.abs(itemTime  - rangeTime) < 60000;
           });
 
-        if (existingData) {
-          return existingData;
+        if (existingData6) {
+          return existingData6;
         } else {
-          return { name: selectedItemName, time: time, number: 0 };
+          return { name: selectedItemName6, time: time, number: 0 };
         }
       });
 
       // 准备数据
-      var xAxisData = selectedItemData.map(function (item) {
-        return new Date(item.time).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit'});
+      var xAxisData6 = selectedItemData6.map(function (item6) {
+        return new Date(item6.time).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit'});
       });
 
-      var yAxisData = selectedItemData.map(function (item) {
-        return item.number === 0 ? [item.time, null] : item.number;
+      var yAxisData6 = selectedItemData6.map(function (item6) {
+        return item6.number === 0 ? [item6.time, null] : item6.number;
       });
 
       // 定义 modalOption
-      var modalOption = {
+      var modalOption6 = {
         title: {
           text: '5時間の分ごと変化図',
           left: 'center'
@@ -1079,7 +1093,7 @@ var t = null;
         },
         xAxis: {
           type: 'category',
-          data: xAxisData,
+          data: xAxisData6,
           axisLabel: {
             interval: function (index, value) {
               return index % 30 === 0;
@@ -1107,7 +1121,7 @@ var t = null;
         series: [
           {
             name: '单位: g',
-            data: yAxisData.map(function (value) {
+            data: yAxisData6.map(function (value) {
               return value ? value / 60 * 0.433 : null;
             }),
             type: 'line',
@@ -1117,7 +1131,9 @@ var t = null;
           },
           {
             name: '单位: w',
-            data: yAxisData,
+            data: yAxisData6.map(function (value) {
+              return value ? value / 1 : null;
+            }),
             type: 'line',
             smooth: true,
             areaStyle: {},
@@ -1161,7 +1177,7 @@ var t = null;
       // 初始化图表并设置数据
       var newChart6 = echarts.init(chartContainer6);
       setTimeout(function () {
-        newChart6.setOption(modalOption);
+        newChart6.setOption(modalOption6);
         var modalContent6 = document.getElementById('modal-content6');
         chartContainer6.style.width = window.getComputedStyle(modalContent6).width + ' - 20px)';
         chartContainer6.style.height = 'calc(' + window.getComputedStyle(modalContent6).height + ' - 40px)';
@@ -1407,12 +1423,23 @@ function createInput(id) {
   return input;
 }
 
+// 创建按钮的函数
+function createToggleButton() {
+  const button = document.createElement("button");
+  button.classList.add("toggle-btn");
+  return button;
+}
+
 // 创建左侧输入框
 const leftInputs = document.querySelector(".settings-left");
 for (let i = 1; i <= 8; i++) {
   const label = document.createElement("label");
-  label.textContent = `${i}: `;
-  label.style.color = "black"; // 添加这行
+  const toggleBtn = createToggleButton(); // 创建按钮
+  label.appendChild(toggleBtn); // 将按钮添加到标签中
+  const span = document.createElement("span");
+  span.textContent = `${i}: `;
+  span.style.color = "black"; // 添加这行
+  label.appendChild(span);
   const input = createInput(`input${i}`);
   label.appendChild(input);
   leftInputs.appendChild(label);
@@ -1422,7 +1449,13 @@ for (let i = 1; i <= 8; i++) {
 const rightInputs = document.querySelector(".settings-right");
 for (let i = 9; i <= 16; i++) {
   const label = document.createElement("label");
-  label.textContent = `${i}: `;
+  const numberSpan = document.createElement("span");
+  const toggleBtn = createToggleButton(); // 创建按钮
+  label.appendChild(toggleBtn); // 将按钮添加到标签中
+  numberSpan.textContent = `${i}`;
+  numberSpan.classList.add("input-number");
+  label.appendChild(numberSpan);
+  label.appendChild(document.createTextNode(": "));
   label.style.color = "black"; // 添加这行
   const input = createInput(`input${i}`);
   label.appendChild(input);
@@ -1433,8 +1466,12 @@ for (let i = 9; i <= 16; i++) {
 const matomeContainer = document.querySelector(".settings-matome");
 for (let i = 1; i <= 5; i++) {
   const label = document.createElement("label");
-  label.textContent = `まとめ${i}: `;
-  label.style.color = "black"; // 添加这行
+  const toggleBtn = createToggleButton(); // 创建按钮
+  label.appendChild(toggleBtn); // 将按钮添加到标签中
+  const span = document.createElement("span");
+  span.textContent = `まとめ${i}: `;
+  span.style.color = "black"; // 添加这行
+  label.appendChild(span);
   const input = createInput(`matomeInput${i}`);
   label.appendChild(input);
   matomeContainer.appendChild(label);
@@ -1476,14 +1513,45 @@ async function initializeInputs() {
     return matchedItem ? matchedItem.newname : "";
   }
 
+  // 获取按钮初始状态
+  // 将名字与按钮状态匹配
+  function getButtonStatus(name) {
+    const matchedItem = matomeData.find(item => item.name === name);
+    return matchedItem ? matchedItem[name] : "0";
+  }
+
   document.getElementById("mainInput").value = getNewName("Main");
+  // 初始化main按钮
+  const mainButton = document.getElementById("mainToggleBtn");
+  const mainStatus = getButtonStatus("Main");
+  mainButton.dataset.status = mainStatus;
+  if (mainStatus === "1") {
+    mainButton.classList.add("pressed");
+  } else {
+    mainButton.classList.remove("pressed");
+  }
 
   for (let i = 1; i <= 16; i++) {
     document.getElementById(`input${i}`).value = getNewName(i.toString());
+    const button = document.getElementById(`toggleBtn${i}`);
+    const status = getButtonStatus(i.toString());
+    button.dataset.status = status;
+    if (status === "1") {
+      button.classList.add("pressed");
+    } else {
+      button.classList.remove("pressed");
+    }
   }
 
   for (let i = 1; i <= 5; i++) {
-    document.getElementById(`matomeInput${i}`).value = getMatomeName(`まとめ${i}`);
+    document.getElementById(`matomeInput${i}`).value = getMatomeName(`matome${i}`);
+    const button = document.getElementById(`matomeToggleBtn${i}`);
+    const status = getButtonStatus(`matome${i}`);
+    if (status === "1") {
+      button.classList.add("pressed");
+    } else {
+      button.classList.remove("pressed");
+    }
   }
 }
 
@@ -1504,11 +1572,11 @@ document.getElementById("saveChanges").addEventListener("click", async function 
     const matomeItem = {
       name: `matome${i}`,
       newname: document.getElementById(`matomeInput${i}`).value,
-      Main: "0",
+      Main: "1",
     };
 
     for (let j = 1; j <= 16; j++) {
-      matomeItem[j.toString()] = "1";
+      matomeItem[j.toString()] = "0";
     }
 
     matomeData.push(matomeItem);
@@ -1540,6 +1608,12 @@ window.addEventListener("click", function (event) {
   if (event.target === settingsModal) {
     settingsModal.style.display = "none";
   }
+});
+
+document.querySelectorAll(".toggle-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    btn.classList.toggle("pressed");
+  });
 });
 
 // 初始化图表并第一次更新数据
