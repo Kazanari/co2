@@ -1359,22 +1359,21 @@ var t = null;
     // 发起 AJAX 请求以获取新数据
     $.getJSON('/get_saved_data', function (response) {
         var data = response.data;
+        var datar = fetchData(data);
 
         // 使用新数据更新图表
-        echarts_1(data);
-        echarts_2(data);
-        echarts_3(data);
-        echarts_4(data);
-        echarts_5(data);
-        echarts_6(data);
-        echarts_7(data);
+        echarts_1(datar);
+        echarts_2(datar);
+        echarts_3(datar);
+        echarts_4(datar);
+        echarts_5(datar);
+        echarts_6(datar);
+        echarts_7(datar);
 
         // 1秒后再次更新数据
         setTimeout(updateChartData, 1000);
     });
   }
-
-
 
   // 页面加载完成时，隐藏 loading 动画
   $(window).load(function() {
@@ -1660,6 +1659,69 @@ document.querySelectorAll(".toggle-btn").forEach((btn) => {
     btn.classList.toggle("pressed");
   });
 });
+
+async function fetchData(data) {
+  const matomeData = await fetchJson("../static/datas/matome.json");
+  const displayData = await fetchJson("../static/datas/display.json");
+
+  const processedData = [];
+
+  for (const item of data) {
+    // 获取 matome.json 中的对应条目
+    const matomeItem = matomeData.find((m) => m.name === item.name);
+
+    if (matomeItem) {
+      // 检查 display.json 中的 display 值
+      const displayItem = displayData.find((d) => d.name === matomeItem.newname);
+
+      // 如果 display 值为 0，跳过创建新数据
+      if (displayItem && displayItem.display === "0") {
+        continue;
+      }
+      
+      // 如果找到 matome 条目，根据 matome 条目中的 Main 和 1-16 字段创建新数据
+      let number = 0;
+
+      if (matomeItem.Main === "1") {
+        number += item.number;
+      }
+
+      for (let i = 1; i <= 16; i++) {
+        if (matomeItem[i.toString()] === "1") {
+          const dataItem = data.find(
+            (d) =>
+              d.time === item.time &&
+              d.type === item.type &&
+              d.name === i.toString()
+          );
+
+          if (dataItem) {
+            number += dataItem.number;
+          }
+        }
+      }
+
+      processedData.push({
+        type: item.type,
+        time: item.time,
+        name: matomeItem.newname,
+        number,
+      });
+    } else {
+      // 如果没有 matome 条目，直接将数据添加到 processedData
+      processedData.push(item);
+    }
+  }
+
+  // 过滤掉 display.json 中 display 为 0 的条目
+  const filteredData = processedData.filter((item) => {
+    const displayItem = displayData.find((d) => d.name === item.name);
+    return !displayItem || displayItem.display === "1";
+  });
+
+  return filteredData;
+}
+
 
 // 初始化图表并第一次更新数据
 updateChartData();
