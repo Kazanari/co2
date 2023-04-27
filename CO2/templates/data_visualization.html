@@ -75,7 +75,7 @@ var t = null;
 
 		<div class="boxall" style="height: calc(58% - .15rem)">
 
-			<div class="alltitle">`現在1時間二酸化炭素排出量ランキング</div>
+			<div class="alltitle">現在1時間二酸化炭素排出量ランキング</div>
 			<div class="boxnav" id="echarts6"></div>
 
       </div>
@@ -97,7 +97,7 @@ var t = null;
     <div class="modal-body">
       <!-- 模态框内容 -->
       <div class="settings-main">
-        <label> <button class="toggle-btn"></button> Main: <input type="text" id="mainInput" /></label>
+        <label> <button class="toggle-btn" id="mainToggleBtn"></button> Main: <input type="text" id="mainInput" /></label>
       </div>
       <div class="settings-container">        
         <div class="settings-side settings-left">
@@ -1424,9 +1424,10 @@ function createInput(id) {
 }
 
 // 创建按钮的函数
-function createToggleButton() {
+function createToggleButton(id) {
   const button = document.createElement("button");
   button.classList.add("toggle-btn");
+  button.id = id;
   return button;
 }
 
@@ -1434,7 +1435,7 @@ function createToggleButton() {
 const leftInputs = document.querySelector(".settings-left");
 for (let i = 1; i <= 8; i++) {
   const label = document.createElement("label");
-  const toggleBtn = createToggleButton(); // 创建按钮
+  const toggleBtn = createToggleButton(`toggleBtn${i}`); // 创建按钮
   label.appendChild(toggleBtn); // 将按钮添加到标签中
   const span = document.createElement("span");
   span.textContent = `${i}: `;
@@ -1450,7 +1451,7 @@ const rightInputs = document.querySelector(".settings-right");
 for (let i = 9; i <= 16; i++) {
   const label = document.createElement("label");
   const numberSpan = document.createElement("span");
-  const toggleBtn = createToggleButton(); // 创建按钮
+  const toggleBtn = createToggleButton(`toggleBtn${i}`); // 创建按钮
   label.appendChild(toggleBtn); // 将按钮添加到标签中
   numberSpan.textContent = `${i}`;
   numberSpan.classList.add("input-number");
@@ -1466,7 +1467,7 @@ for (let i = 9; i <= 16; i++) {
 const matomeContainer = document.querySelector(".settings-matome");
 for (let i = 1; i <= 5; i++) {
   const label = document.createElement("label");
-  const toggleBtn = createToggleButton(); // 创建按钮
+  const toggleBtn = createToggleButton(`matomeToggleBtn${i}`); // 创建按钮
   label.appendChild(toggleBtn); // 将按钮添加到标签中
   const span = document.createElement("span");
   span.textContent = `まとめ${i}: `;
@@ -1474,6 +1475,19 @@ for (let i = 1; i <= 5; i++) {
   label.appendChild(span);
   const input = createInput(`matomeInput${i}`);
   label.appendChild(input);
+
+  // 追加按钮和对应的名称
+  for (let j = 0; j <= 16; j++) {
+    const appendBtn = createToggleButton(`appendBtn${i}_${j}`);
+    appendBtn.id = `appendBtn${i}_${j}`; // 设置按钮的 id
+    label.appendChild(appendBtn);
+
+    const appendSpan = document.createElement("span");
+    appendSpan.textContent = j === 0 ? `Main` : `${j}`; // 设置对应的名称
+    appendSpan.style.color = "black";
+    label.appendChild(appendSpan);
+  }
+
   matomeContainer.appendChild(label);
 }
 
@@ -1500,6 +1514,7 @@ async function saveJson(url, data) {
 async function initializeInputs() {
   const newnameData = await fetchJson("../static/datas/newname.json");
   const matomeData = await fetchJson("../static/datas/matome.json");
+  const displayData = await fetchJson("../static/datas/display.json");
 
   // 将名字与新名字匹配
   function getNewName(name) {
@@ -1516,8 +1531,29 @@ async function initializeInputs() {
   // 获取按钮初始状态
   // 将名字与按钮状态匹配
   function getButtonStatus(name) {
-    const matchedItem = matomeData.find(item => item.name === name);
-    return matchedItem ? matchedItem[name] : "0";
+    const matchedItem = displayData.find(item => item.name === name);
+    return matchedItem ? matchedItem.display : "";
+  }
+
+  // 初始化按钮状态
+  function initializeToggleButtons(buttonData, matomeIndex) {
+    for (const key in buttonData) {
+      if (key === "1" || key === "2" || key === "3" || key === "4" || key === "5" || key === "6" || key === "7" || key === "8" || key === "9" || key === "10" || key === "11" || key === "12" || key === "13" || key === "14" || key === "15" || key === "16") {
+        const button = document.getElementById(`appendBtn${matomeIndex}_${key}`);
+        if (buttonData[key] === "1") {
+          button.classList.add("pressed");
+        } else {
+          button.classList.remove("pressed");
+        }
+      }else if (key === "Main"){
+        const button = document.getElementById(`appendBtn${matomeIndex}_0`);
+        if (buttonData[key] === "1") {
+          button.classList.add("pressed");
+        } else {
+          button.classList.remove("pressed");
+        }
+      }
+    }
   }
 
   document.getElementById("mainInput").value = getNewName("Main");
@@ -1527,8 +1563,6 @@ async function initializeInputs() {
   mainButton.dataset.status = mainStatus;
   if (mainStatus === "1") {
     mainButton.classList.add("pressed");
-  } else {
-    mainButton.classList.remove("pressed");
   }
 
   for (let i = 1; i <= 16; i++) {
@@ -1538,8 +1572,6 @@ async function initializeInputs() {
     button.dataset.status = status;
     if (status === "1") {
       button.classList.add("pressed");
-    } else {
-      button.classList.remove("pressed");
     }
   }
 
@@ -1549,10 +1581,13 @@ async function initializeInputs() {
     const status = getButtonStatus(`matome${i}`);
     if (status === "1") {
       button.classList.add("pressed");
-    } else {
-      button.classList.remove("pressed");
     }
   }
+
+  // 初始化对应的按钮状态
+  matomeData.forEach((item, index) => {
+    initializeToggleButtons(item, index + 1);
+  });
 }
 
 initializeInputs();
@@ -1561,29 +1596,39 @@ initializeInputs();
 document.getElementById("saveChanges").addEventListener("click", async function () {
   const newnameData = [];
   const matomeData = [];
+  const displayData = [];
 
   newnameData.push({ name: 'Main', newname: document.getElementById("mainInput").value });
+  const mainToggleButton = document.getElementById("mainToggleBtn");
+  displayData.push({name: "Main", display: mainToggleButton.classList.contains("pressed") ? "1" : "0"});
 
   for (let i = 1; i <= 16; i++) {
     newnameData.push({ name: i.toString(), newname: document.getElementById(`input${i}`).value });
+    const inputToggleButton = document.getElementById(`toggleBtn${i}`);
+    displayData.push({name: i.toString(), display: inputToggleButton.classList.contains("pressed") ? "1" : "0"});
   }
 
   for (let i = 1; i <= 5; i++) {
+    const matomeToggleButton = document.getElementById(`matomeToggleBtn${i}`);
+    displayData.push({name: `matome${i}`, display: matomeToggleButton.classList.contains("pressed") ? "1" : "0"});
+
     const matomeItem = {
       name: `matome${i}`,
       newname: document.getElementById(`matomeInput${i}`).value,
-      Main: "1",
     };
+    matomeItem["Main"] = document.getElementById(`appendBtn${i}_0`).classList.contains("pressed") ? "1" : "0";
 
     for (let j = 1; j <= 16; j++) {
-      matomeItem[j.toString()] = "0";
-    }
+      const inputToggleButton = document.getElementById(`appendBtn${i}_${j}`);
+      matomeItem[j.toString()] = inputToggleButton.classList.contains("pressed") ? "1" : "0";
+    };
 
     matomeData.push(matomeItem);
   }
 
   await saveJson("/update_newname", newnameData);
   await saveJson("/update_matome", matomeData);
+  await saveJson("/update_display", displayData);
 
   // 调用函数加载新名称数据
   loadNewNameData();
