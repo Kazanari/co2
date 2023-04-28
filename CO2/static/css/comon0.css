@@ -156,11 +156,18 @@ table th,table td{ border-bottom:1px solid rgba(255,255,255,.1); padding: .1rem 
   cursor: pointer;
 }
 
+#button-container {
+  display: flex;
+  justify-content: space-between;
+  width: 120px;
+}
+
 .settings-button {
   position: absolute;
   left: 10px;
   top: 10px;
   z-index: 2;
+  margin-right: 10px;
 }
 
 .modal-title {
@@ -207,6 +214,7 @@ table th,table td{ border-bottom:1px solid rgba(255,255,255,.1); padding: .1rem 
   display: flex;
   flex-direction: column;
   align-items: center;
+  color: black;
 }
 
 .settings-side {
@@ -236,4 +244,24 @@ table th,table td{ border-bottom:1px solid rgba(255,255,255,.1); padding: .1rem 
 
 #mainInput {
   color: black;
+}
+
+.toggle-btn {
+  background-color: #ccc;
+  border: none;
+  padding: 5px 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.toggle-btn.pressed {
+  background-color: #4caf50;
+  color: white;
+}
+
+.input-number {
+  display: inline-block;
+  min-width: 2.0em; /* 调整宽度以适应两位数字的宽度 */
+  text-align: right;
 }
