@@ -1,0 +1,1995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CO2排出量可視化システム</title>
+    <script src="../static/js/echarts.js"></script>
+    <script src="../static/js/visualization.js"></script>
+    <script type="text/javascript" src="../static/js/jquery.js"></script>
+    <link rel="stylesheet" href="../static/css/comon0.css">
+
+</head>
+<body>
+
+<div class="loading">
+    <div class="loadbox"> <img src="../static/images/loading.gif"> Loading.. </div>
+</div>
+
+<div class="head">
+  <h1>CO2排出量可視化システム</h1>
+  <div class="time" id="showTime">2022/10/01 00:00:00</div>
+
+  <script>
+  var t = null;
+      t = setTimeout(time,1000);//開始运行
+      function time()
+      {
+        clearTimeout(t);//清除定时器
+        dt = new Date();
+        var y=dt.getFullYear();
+        var mt=dt.getMonth()+1;
+        var day=dt.getDate();
+        var h=dt.getHours();//获取时
+        var m=dt.getMinutes();//获取分
+        var s=dt.getSeconds();//获取秒
+        var t = null;
+        document.getElementById("showTime").innerHTML = y+"/"+Appendzero(mt)+"/"+Appendzero(day)+" "+Appendzero(h)+":"+Appendzero(m)+":"+Appendzero(s)+"";
+          function Appendzero(obj){
+        if(obj<10) return "0" +""+ obj;
+        else return obj;
+        }
+        t = setTimeout(time,1000); //设定定时器，循环运行
+      }
+  </script>
+</div>
+
+<div class="mainbox">
+  <ul class="clearfix">
+    <li>
+	  <div class="boxall" style="height: calc(100% - .15rem)">
+		<div class="alltitle">
+      現在1分間CO2排出量ランキング
+      
+    </div>
+		 <div class=" boxnav " id="echarts4">
+        </div>
+      </div>
+    </li>
+    <li>
+      <div class="boxall" style="height: calc(50% - .15rem)">
+        <div class="alltitle">リアルタイム二酸化炭素排出量(g)</div>
+        <div class="boxnav" id="echarts1"></div>
+      </div>
+      <div class="boxall" style="height: calc(50% - .15rem)">
+        <div class="alltitle">リアルタイム電気使用量(w)</div>
+        <div class="boxnav" id="echarts2"></div>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<!-- 模态框结构 -->
+<div class="modal" id="settingsModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">Option</h5>
+    </div>
+    <div class="modal-body">
+      <!-- 模态框内容 -->
+      <div class="settings-main">
+        <label> <button class="toggle-btn" id="mainToggleBtn"></button> Main: <input type="text" id="mainInput" /></label>
+      </div>
+      <div class="settings-container">        
+        <div class="settings-side settings-left">
+          <!-- 左侧输入框 1-8 -->
+        </div>
+        <img src="../static/images/emporiaVue.jpg" alt="示例图片" class="settings-image" />
+        <div class="settings-side settings-right">
+          <!-- 右侧输入框 9-16 -->
+        </div>
+      </div>
+      <div class="settings-matome">
+        <!-- まとめ输入框 -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <!--<button class="button" id="cancelButton">close</button>-->
+      <button class="button" id="saveChanges">save</button>
+    </div>
+  </div>
+</div>
+
+<!-- 保存弹窗部分 -->
+<div id="saveModal" class="modal">
+  <div class="modal-content save-modal-content">
+    <span class="close">&times;</span>
+    <h3>Save Data</h3>
+    <label for="startDate">Start Date:</label>
+    <input type="datetime-local" id="startDate" name="startDate" required>
+    <label for="endDate">End Date:</label>
+    <input type="datetime-local" id="endDate" name="endDate" required>
+    <label for="dataType">Data Type:</label>
+    <select id="dataType">
+      <option value="second">秒</option>
+      <option value="minute">分</option>
+      <option value="hour">時</option>
+      <option value="day">日</option>
+    </select>
+    <button id="exportButton">Export</button>
+  </div>
+</div>
+
+<!-- 弹窗部分 -->
+<div id="myModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <div id="modalChart" style="width: 600px; height: 400px;"></div>
+  </div>
+</div>
+
+<!-- 弹窗部分 -->
+<div id="myModal6" class="modal" style="display: none;">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <div id="modalChart6" style="width: 600px; height: 400px;"></div>
+  </div>
+</div>
+
+<div class="button-container">
+  <!-- 设置按钮 -->
+  <button id="settingsButton" class="settings-button">Option</button>
+  <button id="saveButton" class="settings-button">Save</button>
+</div>
+
+<script>
+  function echarts_1(data) {
+    // 获取当前时间
+    var currentTime = new Date();
+
+    // 过滤一分钟以内的数据
+    var filteredMinuteData = data.second.filter(function (item) {
+      var itemTime = new Date(item.time);
+      var timeDifference = currentTime - itemTime;
+      return timeDifference <= 60000; // 60000 毫秒 = 1 分钟
+    });
+
+    // 获取项目名称，排除 "balance"
+    var names = data.second.reduce(function (names, item) {
+      if (names.indexOf(item.name) === -1 && item.name !== "Balance") {
+        names.push(item.name);
+      }
+      return names;
+    }, []);
+
+    // 过滤掉名为 "balance" 的数据
+    filteredMinuteData = filteredMinuteData.filter(function (item) {
+      return item.name !== "Balance";
+    });
+
+    // 准备项目数据
+    var seriesData = names.map(function (name) {
+      return {
+        name: getNewName(name),
+        type: 'line',
+        data: filteredMinuteData
+          .filter(function (item) {
+            return item.name === name;
+          })
+          .map(function (item) {
+            return [item.time, item.number / 3600 * 0.433];
+          }),
+      };
+    });
+
+    // 初始化 ECharts 实例
+    var myChart = echarts.init(document.getElementById('echarts1'));
+
+    // 指定图表的配置项和数据
+    var option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow',
+      },
+    },
+    grid: {
+      left: '0',
+      top: '30',
+      right: '10',
+      bottom: '-20',
+      containLabel: true,
+    },
+    legend: {
+      data: names.map(function (name) {
+        return getNewName(name);
+      }),
+      right: 'center',
+      top: 0,
+      textStyle: {
+        color: '#fff',
+      },
+      itemWidth: 12,
+      itemHeight: 10,
+    },
+    xAxis: {
+      type: 'time',
+      boundaryGap: false,
+      axisLabel: {
+        rotate: -90,
+        textStyle: {
+          color: 'rgba(255,255,255,.6)',
+          fontSize: 14,
+        },
+        interval: function (index, value) {
+          return index % (Math.ceil(filteredMinuteData.length / 6)) === 0;
+        },
+      },
+      axisLine: {
+        lineStyle: {
+          color: 'rgba(255,255,255,.1)',
+        },
+      },
+      min: currentTime - 60000,
+      max: currentTime,
+      splitNumber: 5,
+    },
+    yAxis: {
+      type: 'value',
+      axisTick: { show: false },
+      axisLine: {
+        lineStyle: {
+          color: 'rgba(255,255,255,.1)',
+        },
+      },
+      axisLabel: {
+        textStyle: {
+          color: 'rgba(255,255,255,.6)',
+          fontSize: 14,
+        },
+        formatter: function (value) {
+          return value + 'g';
+        }
+      },
+      splitLine: {
+        lineStyle: {
+          color: 'rgba(255,255,255,.1)',
+        },
+      },
+    },
+    series: seriesData.map(function (seriesItem, index) {
+      // 根据您提供的样式，您可以修改此处的颜色、区域样式、线条样式等。
+      // 以下是一个示例，根据项目数量设置不同的颜色。
+      var colors = [
+        '#3B7DF8', // 蓝色
+        '#F44336', // 红色
+        '#4CAF50', // 绿色
+        '#FF9800', // 橙色
+        '#9C27B0', // 紫色
+        '#00BCD4', // 青色
+        '#FFEB3B', // 黄色
+        '#795548', // 棕色
+        '#607D8B'  // 蓝灰色
+      ];
+      var color = colors[index % colors.length];
+
+      return {
+        name: seriesItem.name,
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 5,
+        showSymbol: false,
+        lineStyle: {
+          normal: {
+            color: color,
+            width: 2,
+          },
+        },
+        itemStyle: {
+          normal: {
+            color: color,
+            borderColor: echarts.color.lift(color, 0.1),
+            borderWidth: 12,
+          },
+        },
+        data: seriesItem.data,
+      };
+    }),
+    };
+    // 使用刚指定的配置项和数据显示图表
+    myChart.setOption(option);
+    window.addEventListener('resize', function () {
+      myChart.resize();
+    });
+  }
+
+  function echarts_2(data) {
+    // 获取当前时间
+    var currentTime = new Date();
+
+    // 过滤一分钟以内的数据
+    var filteredMinuteData = data.second.filter(function (item) {
+      var itemTime = new Date(item.time);
+      var timeDifference = currentTime - itemTime;
+      return timeDifference <= 60000; // 60000 毫秒 = 1 分钟
+    });
+
+    // 获取项目名称，排除 "balance"
+    var names = data.second.reduce(function (names, item) {
+      if (names.indexOf(item.name) === -1 && item.name !== "Balance") {
+        names.push(item.name);
+      }
+      return names;
+    }, []);
+
+    // 过滤掉名为 "balance" 的数据
+    filteredMinuteData = filteredMinuteData.filter(function (item) {
+      return item.name !== "Balance";
+    });
+
+    // 准备项目数据
+    var seriesData = names.map(function (name) {
+      return {
+        name: getNewName(name),
+        type: 'line',
+        data: filteredMinuteData
+          .filter(function (item) {
+            return item.name === name;
+          })
+          .map(function (item) {
+            return [item.time, item.number];
+          }),
+      };
+    });
+
+    // 初始化 ECharts 实例
+    var myChart = echarts.init(document.getElementById('echarts2'));
+
+    // 指定图表的配置项和数据
+    var option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow',
+      },
+    },
+    grid: {
+      left: '0',
+      top: '30',
+      right: '10',
+      bottom: '-20',
+      containLabel: true,
+    },
+    legend: {
+      data: names.map(function (name) {
+        return getNewName(name);
+      }),
+      right: 'center',
+      top: 0,
+      textStyle: {
+        color: '#fff',
+      },
+      itemWidth: 12,
+      itemHeight: 10,
+    },
+    xAxis: {
+      type: 'time',
+      boundaryGap: false,
+      axisLabel: {
+        rotate: -90,
+        textStyle: {
+          color: 'rgba(255,255,255,.6)',
+          fontSize: 14,
+        },
+        interval: function (index, value) {
+          return index % (Math.ceil(filteredMinuteData.length / 6)) === 0;
+        },
+      },
+      axisLine: {
+        lineStyle: {
+          color: 'rgba(255,255,255,.1)',
+        },
+      },
+      min: currentTime - 60000,
+      max: currentTime,
+      splitNumber: 5,
+    },
+    yAxis: {
+      type: 'value',
+      axisTick: { show: false },
+      axisLine: {
+        lineStyle: {
+          color: 'rgba(255,255,255,.1)',
+        },
+      },
+      axisLabel: {
+        textStyle: {
+          color: 'rgba(255,255,255,.6)',
+          fontSize: 14,
+        },
+        formatter: function (value) {
+          return value + 'w';
+        }
+      },
+      splitLine: {
+        lineStyle: {
+          color: 'rgba(255,255,255,.1)',
+        },
+      },
+    },
+    series: seriesData.map(function (seriesItem, index) {
+      // 根据您提供的样式，您可以修改此处的颜色、区域样式、线条样式等。
+      // 以下是一个示例，根据项目数量设置不同的颜色。
+      var colors = [
+        '#3B7DF8', // 蓝色
+        '#F44336', // 红色
+        '#4CAF50', // 绿色
+        '#FF9800', // 橙色
+        '#9C27B0', // 紫色
+        '#00BCD4', // 青色
+        '#FFEB3B', // 黄色
+        '#795548', // 棕色
+        '#607D8B'  // 蓝灰色
+      ];
+      var color = colors[index % colors.length];
+
+      return {
+        name: seriesItem.name,
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 5,
+        showSymbol: false,
+        lineStyle: {
+          normal: {
+            color: color,
+            width: 2,
+          },
+        },
+        itemStyle: {
+          normal: {
+            color: color,
+            borderColor: echarts.color.lift(color, 0.1),
+            borderWidth: 12,
+          },
+        },
+        data: seriesItem.data,
+      };
+    }),
+    };
+    // 使用刚指定的配置项和数据显示图表
+    myChart.setOption(option);
+    window.addEventListener('resize', function () {
+      myChart.resize();
+    });
+  }
+
+  function echarts_3(data) {
+    // 获取当前时间
+    var currentTime = new Date();
+
+    var todayStart = new Date(currentTime);
+    todayStart.setHours(0, 0, 0, 0);
+
+    var todayEnd = new Date(currentTime);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // 过滤一天以内的数据
+    var filteredMinuteData = data.hour.filter(function (item) {
+      var itemTime = new Date(item.time);
+      var timeDifference = currentTime - itemTime;
+      return timeDifference <= 86400000; // 86400000 毫秒 = 1 天
+    });
+
+    // 获取项目名称，排除 "balance"
+    var names = data.hour.reduce(function (names, item) {
+      if (names.indexOf(item.name) === -1 && item.name !== "Balance") {
+        names.push(item.name);
+      }
+      return names;
+    }, []);
+
+    var seriesData = names.map(function (name) {
+      var hourlyData = Array.from({ length: 24 }, (_, index) => {
+        // 设置每小时的默认时间和数值
+        var defaultTime = new Date(currentTime);
+        defaultTime.setHours(index, 0, 0, 0);
+        var defaultNumber = index === 0 ? 0 : null;
+        return { time: defaultTime, number: defaultNumber };
+      });
+
+      filteredMinuteData
+        .filter(function (item) {
+          return item.name === name;
+        })
+        .forEach(function (item) {
+          var itemHour = new Date(item.time).getHours();
+          var currentHour = currentTime.getHours();
+          var index = (currentHour - itemHour + 24) % 24;
+          var correctIndex = 23 - index;
+          hourlyData[correctIndex] = { time: new Date(item.time), number: item.number * 433 };
+        });
+
+      return {
+        name: getNewName(name),
+        type: 'line',
+        data: hourlyData.map(function (item, index) {
+          return item.number === 0 ? [item.time, null] : [item.time, item.number];
+        }),
+      };
+    });
+
+    // 初始化 ECharts 实例
+    var myChart = echarts.init(document.getElementById('echarts3'));
+
+    // 指定图表的配置项和数据
+    var option = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow',
+        },
+      },
+      grid: {
+        left: '0',
+        top: '30',
+        right: '10',
+        bottom: '-20',
+        containLabel: true,
+      },
+      legend: {
+        data: names.map(function (name) {
+          return getNewName(name);
+        }),
+        right: 'center',
+        top: 0,
+        textStyle: {
+          color: '#fff',
+        },
+        itemWidth: 12,
+        itemHeight: 10,
+      },
+      xAxis: {
+        type: 'time',
+        boundaryGap: false,
+        axisLabel: {
+          rotate: -90,
+          textStyle: {
+            color: 'rgba(255,255,255,.6)',
+            fontSize: 14,
+          },
+          interval: 2 * 60 * 60 * 1000,  // 设置间隔为2小时
+        },
+        axisLine: {
+          lineStyle: {
+            color: 'rgba(255,255,255,.1)',
+          },
+        },
+        min: todayStart,
+        max: todayEnd,
+        splitNumber: 12,
+      },
+
+      yAxis: {
+        type: 'value',
+        axisTick: { show: false },
+        axisLine: {
+          lineStyle: {
+            color: 'rgba(255,255,255,.1)',
+          },
+        },
+        axisLabel: {
+          textStyle: {
+            color: 'rgba(255,255,255,.6)',
+            fontSize: 14,
+          },
+          formatter: function (value) {
+            return value + 'g';
+          },
+        },
+        splitLine: {
+          lineStyle: {
+            color: 'rgba(255,255,255,.1)',
+          },
+        },
+      },
+      series: seriesData.map(function (seriesItem, index) {
+      // 根据您提供的样式，您可以修改此处的颜色、区域样式、线条样式等。
+      // 以下是一个示例，根据项目数量设置不同的颜色。
+      var colors = [
+        '#3B7DF8', // 蓝色
+        '#F44336', // 红色
+        '#4CAF50', // 绿色
+        '#FF9800', // 橙色
+        '#9C27B0', // 紫色
+        '#00BCD4', // 青色
+        '#FFEB3B', // 黄色
+        '#795548', // 棕色
+        '#607D8B'  // 蓝灰色
+      ];
+      var color = colors[index % colors.length];
+
+      return {
+        name: seriesItem.name,
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 5,
+        showSymbol: false,
+        lineStyle: {
+          normal: {
+            color: color,
+            width: 2,
+          },
+        },
+        itemStyle: {
+          normal: {
+            color: color,
+            borderColor: echarts.color.lift(color, 0.1),
+            borderWidth: 12,
+          },
+        },
+        data: seriesItem.data,
+      };
+    }),
+    };
+    // 使用刚指定的配置项和数据显示图表
+    myChart.setOption(option);
+    window.addEventListener('resize', function () {
+      myChart.resize();
+    });
+  }
+
+  function echarts_4(data) {
+    // 定义 colors 变量
+    var colors = [
+        '#3B7DF8', // 蓝色
+        '#F44336', // 红色
+        '#4CAF50', // 绿色
+        '#FF9800', // 橙色
+        '#9C27B0', // 紫色
+        '#00BCD4', // 青色
+        '#FFEB3B', // 黄色
+        '#795548', // 棕色
+        '#607D8B'  // 蓝灰色
+    ];
+
+    // 对数据按时间排序（降序）
+    data.minute.sort(function (a, b) {
+      return new Date(b.time) - new Date(a.time);
+    });
+
+    // 获取最新时间
+    var latestTime = data.minute[0].time;
+
+    // 选择与最新时间相同的数据
+    var latestData = data.minute.filter(function (item) {
+      return item.time === latestTime;
+    });
+
+    // 按照 number 降序排列数据
+    latestData.sort(function (a, b) {
+      return b.number - a.number;
+    });
+
+    // 只保留 number 最大的 9 个项目
+    var topData = latestData.slice(0, 9);
+
+    // 获取项目名称和 number 数组
+    var names = topData.map(function(item) {
+        return getNewName(item.name);
+    });
+
+    var numbers = topData.map(function(item) {
+        return item.number;
+    });
+
+    // 初始化 ECharts 实例
+    var myChart = echarts.init(document.getElementById('echarts4'));
+
+    // 指定图表的配置项和数据
+    var option = {
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow'
+            }
+        },
+        grid: {
+          left: '0',
+          top: '20',
+          right: '10',
+          bottom: '-20',
+          containLabel: true,
+        },
+        xAxis: {
+            type: 'value',
+            boundaryGap: [0, 0.01],
+            axisLabel: {
+              formatter: function (value) {
+                return value + 'g';
+              }
+            }
+        },
+        yAxis: {
+            type: 'category',
+            data: names.reverse(),
+            axisPointer: {
+            type: 'none', // 设置为 'none' 避免在 Y 轴上显示阴影
+            label: {
+                show: true,
+                backgroundColor: '#6a7985', // 设置高亮背景颜色
+                color: '#ffffff' // 设置高亮文字颜色
+            }
+        }
+        },
+        series: [
+            {
+                name: '二酸化炭素排出量(g)',
+                type: 'bar',
+                data: numbers.map(function(item) { return item / 60 * 0.433; }).reverse(),
+                itemStyle: {
+                  emphasis: {
+                    color: function (params) {
+                      return colors[params.dataIndex];
+                    },
+                  },
+                },
+                emphasis: {
+                  focus: 'series',
+                },
+            }
+        ]
+    };
+
+    // 使用刚指定的配置项和数据显示图表
+    myChart.setOption(option);
+    window.addEventListener('resize', function () {
+      myChart.resize();
+    });
+
+    // 弹窗关闭相关代码
+    var modal = document.getElementById("myModal");
+    var closeButton = document.getElementsByClassName("close")[0];
+
+    closeButton.onclick = function () {
+      modal.style.display = "none";
+    };
+
+    window.onclick = function (event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    };
+
+    // ECharts 相关代码
+    var modalChart = echarts.init(document.getElementById("modalChart"));
+
+    // 在 echarts_4 函数中添加点击事件处理
+    option.series[0].emphasis = {
+      focus: "series",
+    };
+
+    myChart.on('click', function (params) {
+      // 获取选中项目的名字
+      var selectedItemName = params.name;
+
+      // 筛选与选中项目相关的数据
+      var startTime = new Date() - 5 * 60 * 1000; // 5分钟之前的时间戳
+      var timeRange = [];
+
+      for (var i = 0; i < 5 * 60; i++) { // 5分钟的秒数
+        timeRange.push(new Date(startTime + i * 1000)); // 将每一秒的时间戳添加到timeRange数组中
+      }
+      selectedItemData = timeRange.map(function (time) {
+        var existingData = data.second.find(function (item) {
+            var rangeTime = time.getTime();
+            var itemTime = new Date(item.time).getTime();
+            return getNewName(item.name) === selectedItemName && Math.abs(itemTime  - rangeTime) < 1000;
+          });
+
+        if (existingData) {
+          return existingData;
+        } else {
+          return { name: selectedItemName, time: time, number: 0 };
+        }
+      });
+
+      // 准备数据
+      var xAxisData = selectedItemData.map(function (item) {
+        return new Date(item.time).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      });
+
+      var yAxisData = selectedItemData.map(function (item) {
+        return item.number === 0 ? [item.time, null] : item.number;
+      });
+
+      // 定义 modalOption
+      var modalOption = {
+        title: {
+          text: '5分間の秒ごと変化図',
+          left: 'center'
+        },
+        tooltip: {
+          trigger: 'axis',
+        },
+        xAxis: {
+          type: 'category',
+          data: xAxisData,
+          axisLabel: {
+            interval: function (index, value) {
+              return index % 30 === 0;
+            }
+          }
+        },
+        yAxis: [
+          {
+            type: 'value',
+            axisLabel: {
+              formatter: function (value) {
+                return value + 'g';
+              }
+            }
+          },
+          {
+            type: 'value',
+            axisLabel: {
+              formatter: function (value) {
+                return value + 'w';
+              }
+            }
+          }
+        ],
+        series: [
+          {
+            name: '单位: g',
+            data: yAxisData.map(function (value) {
+              return value ? value / 3600 * 0.433 : null;
+            }),
+            type: 'line',
+            smooth: true,
+            areaStyle: {},
+            yAxisIndex: 0 // 使用第一个Y轴
+          },
+          {
+            name: '单位: w',
+            data: yAxisData.map(function (value) {
+              return value ? value / 1 : null;
+            }),
+            type: 'line',
+            smooth: true,
+            areaStyle: {},
+            yAxisIndex: 1, // 使用第二个Y轴
+          }
+        ]
+      };
+
+      // 创建弹出窗口
+      var modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.id = "popup";
+      if (document.getElementById("popup")) {
+        document.getElementById("popup").remove();
+      }
+      document.body.appendChild(modal);
+
+      var modalContent = document.createElement('div');
+      modalContent.className = 'modal-content';
+      modalContent.id = 'modal-content';
+      modal.appendChild(modalContent);
+
+      var closeButton = document.createElement('span');
+      closeButton.className = 'close';
+      closeButton.innerHTML = '&times;';
+      modalContent.appendChild(closeButton);
+
+      closeButton.addEventListener('click', function () {
+        modal.style.display = 'none';
+      });
+
+      // 在弹出窗口中添加图表
+      var chartContainer = document.createElement('div');
+      chartContainer.style.width = 'calc(100% - 20px)';
+      chartContainer.style.height = 'calc(100% - 40px)';
+      modalContent.appendChild(chartContainer);
+
+      // 将弹出窗口添加到页面中
+      document.body.appendChild(modal);
+
+      // 初始化图表并设置数据
+      var newChart = echarts.init(chartContainer);
+      setTimeout(function () {
+        newChart.setOption(modalOption);
+        var modalContent = document.getElementById('modal-content');
+        chartContainer.style.width = window.getComputedStyle(modalContent).width + ' - 20px)';
+        chartContainer.style.height = 'calc(' + window.getComputedStyle(modalContent).height + ' - 40px)';
+        newChart.resize();
+
+        window.addEventListener("resize", function () {
+          chartContainer.style.width = window.getComputedStyle(modalContent).width + ' - 20px)';
+          chartContainer.style.height = 'calc(' + window.getComputedStyle(modalContent).height + ' - 40px)';
+          newChart.resize();
+        });
+      }, 0);
+
+      // 显示模态窗口
+      modal.style.display = 'block';
+    });
+  }
+
+  async function echarts_5(data) {
+    const matomeData = await fetchJson("../static/datas/matome.json");
+    const matome1 = matomeData.find(item => item.name === "matome1");
+    const matome1NewName = matome1 ? matome1.newname : "";
+
+    // 根据传入的数据，分别获取 matome1 的日数据和其他数据的日数据
+    const matome1Data = data.day.find((item) => item.name === matome1NewName);
+    const otherData = data.day.filter((item) => item.name !== matome1NewName);
+
+    // 显示 matome1 的文本信息
+    const matome1TextContainer = document.getElementById("matome1-text");
+    if (matome1Data) {
+      let number = matome1Data.number * 433;
+      let unit = "g"; // 默认单位
+
+      if (number >= 1000) {
+        unit = "kg"; // 如果数值大于等于1000，使用另一个单位
+        number /= 1000; // 除以1000
+      }
+
+      const formattedNumber = number.toFixed(2); // 保留两位小数
+      matome1TextContainer.innerHTML = `${formattedNumber} ${unit}`;
+    } else {
+      matome1TextContainer.innerHTML = "データなし";
+    }
+
+    // 初始化柱状图
+    const barChart = echarts.init(document.getElementById("echarts5-pie"));
+
+    // 柱状图的数据
+    const barData = otherData.map((item) => ({
+      value: item.number / (matome1Data ? matome1Data.number : 1),
+      name: item.name,
+    }));
+
+    // 柱状图的选项
+    const barOption = {
+      tooltip: {
+        trigger: "axis",
+        axisPointer: {
+          type: "shadow",
+        },
+        formatter: "{a} <br/>{b}: {c}",
+      },
+      grid: {
+        left: '0',
+        top: '-20',
+        right: '10',
+        bottom: '0',
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        data: otherData.map((item) => item.name),
+      },
+      yAxis: {
+        type: "value",
+      },
+      series: [
+        {
+          type: "bar",
+          data: barData,
+          itemStyle: {
+            color: "#5470C6",
+          },
+        },
+      ],
+    };
+
+    // 设置柱状图的选项
+    barChart.setOption(barOption);
+
+    // 窗口大小变化时，调整图表大小
+    window.addEventListener("resize", () => {
+      barChart.resize();
+    });
+  }
+  
+  function echarts_6(data) {
+    // 定义 colors 变量
+    var colors = [
+      '#3B7DF8', // 蓝色
+      '#F44336', // 红色
+      '#4CAF50', // 绿色
+      '#FF9800', // 橙色
+      '#9C27B0', // 紫色
+      '#00BCD4', // 青色
+      '#FFEB3B', // 黄色
+      '#795548', // 棕色
+      '#607D8B'  // 蓝灰色
+    ];
+
+    // 对数据按时间排序（降序）
+    data.hour.sort(function (a, b) {
+      return new Date(b.time) - new Date(a.time);
+    });
+
+    // 获取最新时间
+    var latestTime = data.hour[0].time;
+
+    // 选择与最新时间相同的数据
+    var latestData = data.hour.filter(function (item6) {
+      return item6.time === latestTime;
+    });
+
+    // 按照 number 降序排列数据
+    latestData.sort(function (a, b) {
+      return b.number - a.number;
+    });
+
+    // 只保留 number 最大的 9 个项目
+    var topData = latestData.slice(0, 9);
+
+    // 获取项目名称和 number 数组
+    var names = topData.map(function(item6) {
+        return getNewName(item6.name);
+    });
+
+    var numbers = topData.map(function(item6) {
+        return item6.number;
+    });
+
+    // 初始化 ECharts 实例
+    var myChart = echarts.init(document.getElementById('echarts6'));
+
+    // 指定图表的配置项和数据
+    var option = {
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow'
+            }
+        },
+        grid: {
+          left: '0',
+          top: '20',
+          right: '10',
+          bottom: '-20',
+          containLabel: true,
+        },
+        xAxis: {
+            type: 'value',
+            boundaryGap: [0, 0.01],
+            axisLabel: {
+              formatter: function (value) {
+                return value + 'g';
+              }
+            }
+        },
+        yAxis: {
+            type: 'category',
+            data: names.reverse(),
+            axisPointer: {
+            type: 'none', // 设置为 'none' 避免在 Y 轴上显示阴影
+            label: {
+                show: true,
+                backgroundColor: '#6a7985', // 设置高亮背景颜色
+                color: '#ffffff' // 设置高亮文字颜色
+            }
+        }
+        },
+        series: [
+            {
+                name: '二酸化炭素排出量(g)',
+                type: 'bar',
+                data: numbers.map(function(item6) { return item6 * 433; }).reverse(),
+                itemStyle: {
+                  emphasis: {
+                    color: function (params) {
+                      return colors[params.dataIndex];
+                    },
+                  },
+                },
+                emphasis: {
+                  focus: 'series',
+                },
+            }
+        ]
+    };
+
+    // 使用刚指定的配置项和数据显示图表
+    myChart.setOption(option);
+    window.addEventListener('resize', function () {
+      myChart.resize();
+    });
+
+    // 弹窗关闭相关代码
+    var modal6 = document.getElementById("myModal6");
+    var closeButton6 = document.getElementsByClassName("close")[1];
+
+    closeButton6.onclick = function () {
+      modal6.style.display = "none";
+    };
+
+    window.onclick = function (event) {
+      if (event.target == modal6) {
+        modal6.style.display = "none";
+      }
+    };
+
+    // ECharts 相关代码
+    var modalChart6 = echarts.init(document.getElementById("modalChart6"));
+
+    // 在 echarts_6 函数中添加点击事件处理
+    option.series[0].emphasis = {
+      focus: "series",
+    };
+
+    myChart.on('click', function (params) {
+      // 获取选中项目的名字
+      var selectedItemName6 = params.name;
+
+      // 筛选与选中项目相关的数据
+      var startTime = new Date() - 5 * 60 * 60000; // 5小时之前的时间戳
+      var timeRange = [];
+
+      for (var i = 0; i < 5 * 60; i++) { // 5小时的分数
+        timeRange.push(new Date(startTime + i * 60000)); // 将每一秒的时间戳添加到timeRange数组中
+      }
+      selectedItemData6 = timeRange.map(function (time) {
+        var existingData6 = data.minute.find(function (item6) {
+            var rangeTime = time.getTime();
+            var itemTime = new Date(item6.time).getTime();
+            return getNewName(item6.name) === selectedItemName6 && Math.abs(itemTime  - rangeTime) < 60000;
+          });
+
+        if (existingData6) {
+          return existingData6;
+        } else {
+          return { name: selectedItemName6, time: time, number: 0 };
+        }
+      });
+
+      // 准备数据
+      var xAxisData6 = selectedItemData6.map(function (item6) {
+        return new Date(item6.time).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit'});
+      });
+
+      var yAxisData6 = selectedItemData6.map(function (item6) {
+        return item6.number === 0 ? [item6.time, null] : item6.number;
+      });
+
+      // 定义 modalOption
+      var modalOption6 = {
+        title: {
+          text: '5時間の分ごと変化図',
+          left: 'center'
+        },
+        tooltip: {
+          trigger: 'axis',
+        },
+        xAxis: {
+          type: 'category',
+          data: xAxisData6,
+          axisLabel: {
+            interval: function (index, value) {
+              return index % 30 === 0;
+            }
+          }
+        },
+        yAxis: [
+          {
+            type: 'value',
+            axisLabel: {
+              formatter: function (value) {
+                return value + 'g';
+              }
+            }
+          },
+          {
+            type: 'value',
+            axisLabel: {
+              formatter: function (value) {
+                return value + 'w';
+              }
+            }
+          }
+        ],
+        series: [
+          {
+            name: '单位: g',
+            data: yAxisData6.map(function (value) {
+              return value ? value / 60 * 0.433 : null;
+            }),
+            type: 'line',
+            smooth: true,
+            areaStyle: {},
+            yAxisIndex: 0 // 使用第一个Y轴
+          },
+          {
+            name: '单位: w',
+            data: yAxisData6.map(function (value) {
+              return value ? value / 1 : null;
+            }),
+            type: 'line',
+            smooth: true,
+            areaStyle: {},
+            yAxisIndex: 1, // 使用第二个Y轴
+          }
+        ]
+      };
+
+      // 创建弹出窗口
+      var modal6 = document.createElement('div');
+      modal6.className = 'modal';
+      modal6.id = "popup6";
+      if (document.getElementById("popup6")) {
+        document.getElementById("popup6").remove();
+      }
+      document.body.appendChild(modal6);
+
+      var modalContent6 = document.createElement('div');
+      modalContent6.className = 'modal-content';
+      modalContent6.id = 'modal-content6';
+      modal6.appendChild(modalContent6);
+
+      var closeButton6 = document.createElement('span');
+      closeButton6.className = 'close';
+      closeButton6.innerHTML = '&times;';
+      modalContent6.appendChild(closeButton6);
+
+      closeButton6.addEventListener('click', function () {
+        modal6.style.display = 'none';
+      });
+
+      // 在弹出窗口中添加图表
+      var chartContainer6 = document.createElement('div');
+      chartContainer6.style.width = 'calc(100% - 20px)';
+      chartContainer6.style.height = 'calc(100% - 40px)';
+      modalContent6.appendChild(chartContainer6);
+
+      // 将弹出窗口添加到页面中
+      document.body.appendChild(modal6);
+
+      // 初始化图表并设置数据
+      var newChart6 = echarts.init(chartContainer6);
+      setTimeout(function () {
+        newChart6.setOption(modalOption6);
+        var modalContent6 = document.getElementById('modal-content6');
+        chartContainer6.style.width = window.getComputedStyle(modalContent6).width + ' - 20px)';
+        chartContainer6.style.height = 'calc(' + window.getComputedStyle(modalContent6).height + ' - 40px)';
+        newChart6.resize();
+
+        window.addEventListener("resize", function () {
+          chartContainer6.style.width = window.getComputedStyle(modalContent6).width + ' - 20px)';
+          chartContainer6.style.height = 'calc(' + window.getComputedStyle(modalContent6).height + ' - 40px)';
+          newChart6.resize();
+        });
+      }, 0);
+
+      // 显示模态窗口
+      modal6.style.display = 'block';
+    });
+  }
+
+  function echarts_7(data) {
+    // 获取当前时间
+    var currentTime = new Date();
+
+    var hourStart = new Date(currentTime);
+    hourStart.setMinutes(0, 0, 0);
+
+    var hourEnd = new Date(currentTime);
+    hourEnd.setMinutes(59, 59, 999);
+
+    // 过滤一小时以内的数据
+    var filteredMinuteData = data.minute.filter(function (item) {
+      var itemTime = new Date(item.time);
+      var timeDifference = currentTime - itemTime;
+      return timeDifference <= 3600000; // 3600000 毫秒 = 1 小时
+    });
+
+    // 获取项目名称，排除 "balance"
+    var names = data.minute.reduce(function (names, item) {
+      if (names.indexOf(item.name) === -1 && item.name !== "Balance") {
+        names.push(item.name);
+      }
+      return names;
+    }, []);
+
+    var seriesData = names.map(function (name) {
+      var minutelyData = Array.from({ length: 60 }, (_, index) => {
+        // 设置每分钟的默认时间和数值
+        var defaultTime = new Date(currentTime);
+        defaultTime.setMinutes(currentTime.getMinutes() - 60 + index);
+        var defaultNumber = index === 0 ? 0 : null;
+        return { time: defaultTime, number: defaultNumber };
+      });
+
+      filteredMinuteData
+        .filter(function (item) {
+          return item.name === name;
+        })
+        .forEach(function (item) {
+          var itemMinute = new Date(item.time).getMinutes();
+          var index = (60 + currentTime.getMinutes() - itemMinute) % 60;
+          minutelyData[index] = { time: new Date(item.time), number: item.number / 60 * 0.433 };
+        });
+
+      return {
+        name: getNewName(name),
+        type: 'line',
+        data: minutelyData.map(function (item, index) {
+          return item.number === 0 ? [item.time, null] : [item.time, item.number];
+        }),
+      };
+    });
+
+    // 初始化 ECharts 实例
+    var myChart = echarts.init(document.getElementById('echarts7'));
+
+    // 指定图表的配置项和数据
+    var option = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow',
+        },
+      },
+      grid: {
+        left: '0',
+        top: '30',
+        right: '10',
+        bottom: '-20',
+        containLabel: true,
+      },
+      legend: {
+        data: names.map(function (name) {
+          return getNewName(name);
+        }),
+        right: 'center',
+        top: 0,
+        textStyle: {
+          color: '#fff',
+        },
+        itemWidth: 12,
+        itemHeight: 10,
+      },
+      xAxis: {
+        type: 'time',
+        boundaryGap: false,
+        axisLabel: {
+          rotate: -90,
+          textStyle: {
+            color: 'rgba(255,255,255,.6)',
+            fontSize: 14,
+          },
+        },
+        axisLine: {
+          lineStyle: {
+            color: 'rgba(255,255,255,.1)',
+          },
+        },
+        min: hourStart,
+        max: hourEnd,
+        splitNumber: 6,
+      },
+
+      yAxis: {
+        type: 'value',
+    axisTick: { show: false },
+    axisLine: {
+      lineStyle: {
+        color: 'rgba(255,255,255,.1)',
+      },
+    },
+    axisLabel: {
+      textStyle: {
+        color: 'rgba(255,255,255,.6)',
+        fontSize: 14,
+      },
+      formatter: function (value) {
+        return value + 'g';
+      },
+    },
+    splitLine: {
+      lineStyle: {
+        color: 'rgba(255,255,255,.1)',
+      },
+    },
+  },
+  series: seriesData.map(function (seriesItem, index) {
+    // 根据您提供的样式，您可以修改此处的颜色、区域样式、线条样式等。
+    // 以下是一个示例，根据项目数量设置不同的颜色。
+    var colors = [    
+    '#3B7DF8', // 蓝色    
+    '#F44336', // 红色    
+    '#4CAF50', // 绿色    
+    '#FF9800', // 橙色    
+    '#9C27B0', // 紫色    
+    '#00BCD4', // 青色    
+    '#FFEB3B', // 黄色    
+    '#795548', // 棕色    
+    '#607D8B'  // 蓝灰色  
+  ];
+    var color = colors[index % colors.length];
+
+    return {
+      name: seriesItem.name,
+      type: 'line',
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: 5,
+      showSymbol: false,
+      lineStyle: {
+        normal: {
+          color: color,
+          width: 2,
+        },
+      },
+      itemStyle: {
+        normal: {
+          color: color,
+          borderColor: echarts.color.lift(color, 0.1),
+          borderWidth: 12,
+        },
+      },
+      data: seriesItem.data,
+    };
+  }),
+  };
+  // 使用刚指定的配置项和数据显示图表
+  myChart.setOption(option);
+  window.addEventListener('resize', function () {
+    myChart.resize();
+  });
+  }
+
+  // ... 其他图表函数
+
+  // 更新图表数据的函数
+  function updateChartData() {
+    // 发起 AJAX 请求以获取新数据
+    $.getJSON('/get_saved_data', function (response) {
+        var data = response.data;
+        fetchData(data).then((datar) => {
+
+          // 使用新数据更新图表
+          echarts_1(datar);
+          echarts_2(datar);
+          echarts_3(datar);
+          echarts_4(datar);
+          echarts_5(datar);
+          echarts_6(datar);
+          echarts_7(datar);
+
+          // 1秒后再次更新数据
+          setTimeout(updateChartData, 1000);
+        });
+    });
+  }
+
+  // 页面加载完成时，隐藏 loading 动画
+  $(window).load(function() {
+      $(".loading").fadeOut();
+  });
+
+  // 设置字体大小
+  $(document).ready(function() {
+      var whei = $(window).width();
+      $("html").css({ fontSize: whei / 20 });
+      $(window).resize(function() {
+          var whei = $(window).width();
+          $("html").css({ fontSize: whei / 20 });
+      });
+  });
+
+// 用于存储新名称数据的全局变量
+var newNameData = [];
+
+// 从 JSON 文件中加载新名称数据
+function loadNewNameData() {
+  $.getJSON("../static/datas/newname.json", function (data) {
+    newNameData = data;
+    console.log("New name data loaded:", newNameData); // 添加此行以检查数据
+  });
+}
+
+// 调用函数加载新名称数据
+loadNewNameData();
+
+function getNewName(projectName) {
+  for (var i = 0; i < newNameData.length; i++) {
+    if (newNameData[i].name === projectName) {
+      return newNameData[i].newname;
+    }
+  }
+  // 如果找不到对应的新名称，返回原始名称
+  return projectName;
+}
+
+// 创建输入框
+function createInput(id) {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.id = id;
+  return input;
+}
+
+// 创建按钮的函数
+function createToggleButton(id) {
+  const button = document.createElement("button");
+  button.classList.add("toggle-btn");
+  button.id = id;
+  return button;
+}
+
+
+// 创建右侧输入框
+const rightInputs = document.querySelector(".settings-right");
+for (let i = 1; i <= 8; i++) {
+  const label = document.createElement("label");
+  const toggleBtn = createToggleButton(`toggleBtn${i}`); // 创建按钮
+  label.appendChild(toggleBtn); // 将按钮添加到标签中
+  const span = document.createElement("span");
+  span.textContent = `${i}: `;
+  span.style.color = "black"; // 添加这行
+  label.appendChild(span);
+  const input = createInput(`input${i}`);
+  label.appendChild(input);
+  rightInputs.appendChild(label);
+}
+
+// 创建左侧输入框
+const leftInputs = document.querySelector(".settings-left");
+for (let i = 16; i >= 9; i--) {
+  const label = document.createElement("label");
+  const numberSpan = document.createElement("span");
+  const toggleBtn = createToggleButton(`toggleBtn${i}`); // 创建按钮
+  label.appendChild(toggleBtn); // 将按钮添加到标签中
+  numberSpan.textContent = `${i}`;
+  numberSpan.classList.add("input-number");
+  label.appendChild(numberSpan);
+  label.appendChild(document.createTextNode(": "));
+  label.style.color = "black"; // 添加这行
+  const input = createInput(`input${i}`);
+  label.appendChild(input);
+  leftInputs.appendChild(label);
+}
+
+// 创建まとめ输入框
+const matomeContainer = document.querySelector(".settings-matome");
+for (let i = 1; i <= 5; i++) {
+  const label = document.createElement("label");
+  const toggleBtn = createToggleButton(`matomeToggleBtn${i}`); // 创建按钮
+  label.appendChild(toggleBtn); // 将按钮添加到标签中
+  const span = document.createElement("span");
+  span.textContent = `まとめ${i}: `;
+  span.style.color = "black"; // 添加这行
+  label.appendChild(span);
+  const input = createInput(`matomeInput${i}`);
+  label.appendChild(input);
+
+  // 追加按钮和对应的名称
+  for (let j = 0; j <= 16; j++) {
+    const appendBtn = createToggleButton(`appendBtn${i}_${j}`);
+    appendBtn.id = `appendBtn${i}_${j}`; // 设置按钮的 id
+    label.appendChild(appendBtn);
+
+    const appendSpan = document.createElement("span");
+    appendSpan.textContent = j === 0 ? `Main` : `${j}`; // 设置对应的名称
+    appendSpan.style.color = "black";
+    label.appendChild(appendSpan);
+  }
+
+  matomeContainer.appendChild(label);
+}
+
+// 读取和保存 newname.json 和 matome.json 的函数
+async function fetchJson(url) {
+  const response = await fetch(url);
+  const data = await response.json();
+  return data;
+}
+
+async function saveJson(url, data) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  return await response.json();
+}
+
+// 初始化输入框内容
+async function initializeInputs() {
+  const newnameData = await fetchJson("../static/datas/newname.json");
+  const matomeData = await fetchJson("../static/datas/matome.json");
+  const displayData = await fetchJson("../static/datas/display.json");
+
+  // 将名字与新名字匹配
+  function getNewName(name) {
+    const matchedItem = newnameData.find(item => item.name === name);
+    return matchedItem ? matchedItem.newname : "";
+  }
+
+  // 将名字与matome名字匹配
+  function getMatomeName(name) {
+    const matchedItem = matomeData.find(item => item.name === name);
+    return matchedItem ? matchedItem.newname : "";
+  }
+
+  // 获取按钮初始状态
+  // 将名字与按钮状态匹配
+  function getButtonStatus(name) {
+    const matchedItem = displayData.find(item => item.name === name);
+    return matchedItem ? matchedItem.display : "";
+  }
+
+  // 初始化按钮状态
+  function initializeToggleButtons(buttonData, matomeIndex) {
+    for (const key in buttonData) {
+      if (key === "1" || key === "2" || key === "3" || key === "4" || key === "5" || key === "6" || key === "7" || key === "8" || key === "9" || key === "10" || key === "11" || key === "12" || key === "13" || key === "14" || key === "15" || key === "16") {
+        const button = document.getElementById(`appendBtn${matomeIndex}_${key}`);
+        if (buttonData[key] === "1") {
+          button.classList.add("pressed");
+        } else {
+          button.classList.remove("pressed");
+        }
+      }else if (key === "Main"){
+        const button = document.getElementById(`appendBtn${matomeIndex}_0`);
+        if (buttonData[key] === "1") {
+          button.classList.add("pressed");
+        } else {
+          button.classList.remove("pressed");
+        }
+      }
+    }
+  }
+
+  document.getElementById("mainInput").value = getNewName("Main");
+  // 初始化main按钮
+  const mainButton = document.getElementById("mainToggleBtn");
+  const mainStatus = getButtonStatus("Main");
+  mainButton.dataset.status = mainStatus;
+  if (mainStatus === "1") {
+    mainButton.classList.add("pressed");
+  }
+
+  for (let i = 1; i <= 16; i++) {
+    document.getElementById(`input${i}`).value = getNewName(i.toString());
+    const button = document.getElementById(`toggleBtn${i}`);
+    const status = getButtonStatus(i.toString());
+    button.dataset.status = status;
+    if (status === "1") {
+      button.classList.add("pressed");
+    }
+  }
+
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById(`matomeInput${i}`).value = getMatomeName(`matome${i}`);
+    const button = document.getElementById(`matomeToggleBtn${i}`);
+    const status = getButtonStatus(`matome${i}`);
+    if (status === "1") {
+      button.classList.add("pressed");
+    }
+    // 如果i为1（matome1），则始终将其设为按下状态并禁用它
+    if (i === 1) {
+      button.classList.add("pressed");
+      button.disabled = true;
+    }
+  }
+
+  // 初始化对应的按钮状态
+  matomeData.forEach((item, index) => {
+    initializeToggleButtons(item, index + 1);
+  });
+}
+
+initializeInputs();
+
+// 保存按钮点击事件
+document.getElementById("saveChanges").addEventListener("click", async function () {
+  const newnameData = [];
+  const matomeData = [];
+  const displayData = [];
+
+  newnameData.push({ name: 'Main', newname: document.getElementById("mainInput").value });
+  const mainToggleButton = document.getElementById("mainToggleBtn");
+  displayData.push({name: "Main", display: mainToggleButton.classList.contains("pressed") ? "1" : "0"});
+
+  for (let i = 1; i <= 16; i++) {
+    newnameData.push({ name: i.toString(), newname: document.getElementById(`input${i}`).value });
+    const inputToggleButton = document.getElementById(`toggleBtn${i}`);
+    displayData.push({name: i.toString(), display: inputToggleButton.classList.contains("pressed") ? "1" : "0"});
+  }
+
+  for (let i = 1; i <= 5; i++) {
+    const matomeToggleButton = document.getElementById(`matomeToggleBtn${i}`);
+    displayData.push({name: `matome${i}`, display: matomeToggleButton.classList.contains("pressed") ? "1" : "0"});
+
+    const matomeItem = {
+      name: `matome${i}`,
+      newname: document.getElementById(`matomeInput${i}`).value,
+    };
+    matomeItem["Main"] = document.getElementById(`appendBtn${i}_0`).classList.contains("pressed") ? "1" : "0";
+
+    for (let j = 1; j <= 16; j++) {
+      const inputToggleButton = document.getElementById(`appendBtn${i}_${j}`);
+      matomeItem[j.toString()] = inputToggleButton.classList.contains("pressed") ? "1" : "0";
+    };
+
+    matomeData.push(matomeItem);
+  }
+
+  await saveJson("/update_newname", newnameData);
+  await saveJson("/update_matome", matomeData);
+  await saveJson("/update_display", displayData);
+
+  // 调用函数加载新名称数据
+  loadNewNameData();
+
+  settingsModal.style.display = "none";
+});
+
+document.getElementById("settingsButton").addEventListener("click", function () {
+  const settingsModal = document.getElementById("settingsModal");
+  settingsModal.style.display = "block";
+});
+
+// 点击关闭按钮时关闭模态框
+document.getElementsByClassName("close")[0].addEventListener("click", function () {
+  const settingsModal = document.getElementById("settingsModal");
+  settingsModal.style.display = "none";
+});
+
+// 点击模态框外部时关闭模态框
+window.addEventListener("click", function (event) {
+  const settingsModal = document.getElementById("settingsModal");
+  if (event.target === settingsModal) {
+    settingsModal.style.display = "none";
+  }
+});
+
+document.querySelectorAll(".toggle-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    btn.classList.toggle("pressed");
+  });
+});
+
+async function fetchData(data) {
+  const matomeData = await fetchJson("../static/datas/matome.json");
+  const displayData = await fetchJson("../static/datas/display.json");
+
+  const processedData = [];
+
+  const dataTypes = ["second", "minute", "hour", "day"];
+
+  for (const dataType of dataTypes) {
+    const filteredDataByType = data.filter((item) => item.type === dataType);
+    
+    for (const item of filteredDataByType) {
+      if (item.name === "Main") {
+        for (const matomeItem of matomeData) {
+          const displayItem = displayData.find((d) => d.name === matomeItem.name);
+
+          if (displayItem && displayItem.display === "0") {
+            continue;
+          }
+
+          let number = 0;
+
+          if (matomeItem.Main === "1") {
+            number += item.number;
+          }
+
+          for (let i = 1; i <= 16; i++) {
+            if (matomeItem[i.toString()] === "1") {
+              const dataItem = filteredDataByType.find(
+                (d) =>
+                  d.time === item.time &&
+                  d.type === item.type &&
+                  d.name === i.toString()
+              );
+
+              if (dataItem) {
+                number += dataItem.number;
+              }
+            }
+          }
+
+          const newItem = {
+            type: item.type,
+            time: item.time,
+            name: matomeItem.newname,
+            number,
+          };
+
+          processedData.push(newItem);
+        }
+        // Add the original Main item to the processedData
+        processedData.push(item);
+      } else {
+        const existingItem = processedData.find(
+          (p) =>
+            p.type === item.type &&
+            p.time === item.time &&
+            p.name === item.name
+        );
+
+        if (!existingItem) {
+          processedData.push(item);
+        }
+      }
+    }
+  }
+
+  const filteredData = processedData.filter((item) => {
+    const displayItem = displayData.find((d) => d.name === item.name);
+    return !displayItem || displayItem.display === "1";
+  });
+  return {
+    second: filteredData.filter((item) => item.type === "second"),
+    minute: filteredData.filter((item) => item.type === "minute"),
+    hour: filteredData.filter((item) => item.type === "hour"),
+    day: filteredData.filter((item) => item.type === "day"),
+  };
+}
+
+// Get the modal
+var saveModal = document.getElementById("saveModal");
+
+// Get the button that opens the modal
+var saveBtn = document.getElementById("saveButton");
+
+// Get the <span> element that closes the modal
+var saveSpan = saveModal.getElementsByClassName("close")[0];
+
+// When the user clicks on the button, open the modal
+saveBtn.onclick = function () {
+  saveModal.style.display = "block";
+};
+
+// When the user clicks on <span> (x), close the modal
+saveSpan.onclick = function () {
+  saveModal.style.display = "none";
+};
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function (event) {
+  if (event.target == saveModal) {
+    saveModal.style.display = "none";
+  }
+};
+
+async function fetchAllData() {
+  try {
+    const response = await fetch("/get_all_data");
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return [];
+  }
+}
+
+function mergeDataByTime(data) {
+  const dataByType = {
+    second: [],
+    minute: [],
+    hour: [],
+    day: [],
+  };
+
+  for (const item of data) {
+    const existingItem = dataByType[item.type].find(
+      (element) => element.time === item.time
+    );
+
+    if (existingItem) {
+      existingItem[item.name] = item.number;
+    } else {
+      dataByType[item.type].push({
+        time: item.time,
+        [item.name]: item.number,
+      });
+    }
+  }
+
+  return dataByType;
+}
+
+async function exportDataToCSV() {
+  var startDate = document.getElementById("startDate").value;
+  var endDate = document.getElementById("endDate").value;
+  var dataType = document.getElementById("dataType").value;
+
+  // 将日期字符串转换为 Date 对象
+  startDate = new Date(startDate);
+  endDate = new Date(endDate);
+
+  if (!startDate || !endDate || startDate > endDate) {
+    alert("Invalid date range");
+    return;
+  }
+
+  // 获取所有数据
+  const allData = await fetchAllData(); // 使用您提供的获取数据的方法
+  // 处理数据
+  const processedData = await fetchData(allData);
+
+  const allData2 = processedData.second.concat(processedData.minute, processedData.hour, processedData.day);
+  const dataByType = mergeDataByTime(allData2);
+
+  // 根据 dataType 获取相应的数据
+  const data = dataByType[dataType].filter((item) => {
+    const itemTime = new Date(item.time);
+    return itemTime >= startDate && itemTime <= endDate;
+  });
+
+  // 生成 CSV 字符串
+  var csv = "Time";
+  var names = Array.from(new Set(allData2.map((item) => item.name)));
+  names.forEach((name) => {
+    csv += "," + name;
+  });
+  csv += "\n";
+
+  data.forEach(function (item) {
+    csv += item.time;
+    names.forEach((name) => {
+      if (item[name] !== undefined) {
+        switch (dataType) {
+          case 'second':
+            csv += "," + (item[name] / 3600) * 0.433 + "(g)";
+            break;
+          case 'minute':
+            csv += "," + (item[name] / 60) * 0.433 + "(g)";
+            break;
+          case 'hour':
+            csv += "," + item[name] * 433 + "(g)";
+            break;
+          case 'day':
+            csv += "," + item[name] * 433 + "(g)";
+            break;
+          default:
+            break;
+        }
+      } else {
+        csv += ",";
+      }
+    });
+    csv += "\n";
+  });
+
+  // 创建 Blob 对象，设置类型为 Shift_JIS 编码的 CSV
+  const blob = new Blob([csv], { type: 'text/csv;charset=UTF-8' });
+
+  // 创建隐藏的可下载链接
+  const hiddenElement = document.createElement('a');
+  hiddenElement.href = URL.createObjectURL(blob);
+  hiddenElement.target = '_blank';
+  hiddenElement.download = 'data.csv';
+  hiddenElement.click();
+
+  // 释放创建的对象 URL，以避免内存泄漏
+  URL.revokeObjectURL(hiddenElement.href);
+}
+
+// 为 "Export" 按钮添加事件侦听器
+document.getElementById("exportButton").addEventListener("click", exportDataToCSV);
+
+document.querySelector('#saveModal .close').addEventListener('click', () => {
+  document.getElementById('saveModal').style.display = 'none';
+});
+
+// 初始化图表并第一次更新数据
+updateChartData();
+
+</script>
+
+</body>
+</html>
