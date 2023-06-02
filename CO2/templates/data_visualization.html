@@ -421,7 +421,7 @@ let currentState = [0, 0, 0, 0, 0, 0];
           color: 'rgba(255,255,255,.1)',
         },
       },
-      max: null
+      max: document.getElementById("inputYMax").value || null,
     },
     series: seriesData.map(function (seriesItem, index) {
       // 根据您提供的样式，您可以修改此处的颜色、区域样式、线条样式等。
