@@ -1157,12 +1157,6 @@ let currentState = [0, 0, 0, 0, 0, 0];
   }
  
   // ... 其他图表函数
-  var updateYMax = echarts_1(data);
-
-  document.getElementById('updateButton').addEventListener('click', function() {
-    var yMax = document.getElementById('yMaxInput').value;
-    updateYMax(yMax);
-  });
 
   // 更新图表数据的函数
   function updateChartData() {
@@ -1172,7 +1166,7 @@ let currentState = [0, 0, 0, 0, 0, 0];
         fetchData(data).then((datar) => {
 
           // 使用新数据更新图表
-          echarts_1(datar);
+          var updateYMax = echarts_1(datar);
           echarts_2(datar);
           echarts_3(datar);
 
@@ -1181,6 +1175,11 @@ let currentState = [0, 0, 0, 0, 0, 0];
         });
     });
   }
+
+  document.getElementById('updateButton').addEventListener('click', function() {
+    var yMax = document.getElementById('yMaxInput').value;
+    updateYMax(yMax);
+  });
 
   // 页面加载完成时，隐藏 loading 动画
   $(window).load(function() {
