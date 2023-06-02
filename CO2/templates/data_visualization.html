@@ -56,7 +56,8 @@ var t = null;
           <div class="boxall" style="height: calc(50% - .15rem)">
             <button id="button3">CO2</button>
             <button id="button4">秒</button>          
-            <input type="number" id="yMax" placeholder="Y軸最大値">
+            <input id="yMaxInput" type="text">
+            <button id="updateButton">Update Y Max</button>
             <div id="alltitle2" class="alltitle">リアルタイムCO2排出量(g)</div>
             <div class="boxnav" id="echarts1"></div>
           </div>
@@ -118,15 +119,11 @@ let currentState = [0, 0, 0, 0, 0, 0];
       updateDisplay();
     });
 
-    var chart1 = echarts_1(data);
+    var updateYMax = echarts_1(data);
 
-    document.getElementById('yMax').addEventListener('input', function (event) {
-      var yMax = event.target.value;
-      if (yMax) {
-        chart1.updateYMax(Number(yMax));
-      } else {
-        chart1.updateYMax(null);
-      }
+    document.getElementById('updateButton').addEventListener('click', function() {
+      var yMax = document.getElementById('yMaxInput').value;
+      updateYMax(yMax);
     });
 
     document.getElementById('button5').addEventListener('click', function() {
@@ -479,13 +476,13 @@ let currentState = [0, 0, 0, 0, 0, 0];
       myChart.resize();
     });
 
-    // 返回一个可以操作图表的对象
-    return {
-      updateYMax: function (yMax) {
-        var option = myChart.getOption();
-        option.yAxis.max = yMax;
-        myChart.setOption(option);
-      },
+    // 返回一个可以修改Y轴最大值的函数
+    return function(yMax) {
+      if (yMax === '') { // 如果输入为空，删除最大值设置
+        myChart.setOption({yAxis: {max: null}});
+      } else { // 否则，更新最大值
+        myChart.setOption({yAxis: {max: parseFloat(yMax)}});
+      }
     };
   }
 
