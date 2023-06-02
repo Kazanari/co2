@@ -119,13 +119,6 @@ let currentState = [0, 0, 0, 0, 0, 0];
       updateDisplay();
     });
 
-    var updateYMax = echarts_1(data);
-
-    document.getElementById('updateButton').addEventListener('click', function() {
-      var yMax = document.getElementById('yMaxInput').value;
-      updateYMax(yMax);
-    });
-
     document.getElementById('button5').addEventListener('click', function() {
       currentButton5State = (currentButton5State + 1) % button5States.length;
       button5.innerText = button5States[currentButton5State];
@@ -1164,6 +1157,12 @@ let currentState = [0, 0, 0, 0, 0, 0];
   }
  
   // ... 其他图表函数
+  var updateYMax = echarts_1(data);
+
+  document.getElementById('updateButton').addEventListener('click', function() {
+    var yMax = document.getElementById('yMaxInput').value;
+    updateYMax(yMax);
+  });
 
   // 更新图表数据的函数
   function updateChartData() {
