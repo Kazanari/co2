@@ -1157,6 +1157,7 @@ let currentState = [0, 0, 0, 0, 0, 0];
   }
  
   // ... 其他图表函数
+  var updateYMax;
 
   // 更新图表数据的函数
   function updateChartData() {
@@ -1166,7 +1167,7 @@ let currentState = [0, 0, 0, 0, 0, 0];
         fetchData(data).then((datar) => {
 
           // 使用新数据更新图表
-          var updateYMax = echarts_1(datar);
+          updateYMax = echarts_1(datar);
           echarts_2(datar);
           echarts_3(datar);
 
